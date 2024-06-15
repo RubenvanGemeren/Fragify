@@ -1,2 +1,3 @@
-# Fragify
-A simple CLI for Counter Strike 2 Demo analysis and archive.
+
+Source: https://github.com/markus-wa/demoinfocs-golang
+GoLib: https://pkg.go.dev/github.com/markus-wa/demoinfocs-golang/v2
