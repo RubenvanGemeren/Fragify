@@ -1,18 +1,16 @@
 package main
 
 import (
-	"errors"
 	"fmt"
-	"github.com/charmbracelet/bubbles/filepicker"
+	"github.com/charmbracelet/bubbles/list"
 	tea "github.com/charmbracelet/bubbletea"
+	"github.com/charmbracelet/lipgloss"
 	"log"
 	"os"
-	"strings"
-	"time"
 )
 
-func getChoices() []string {
-	availableDemos := []string{}
+func getChoices() []list.Item {
+	var availableDemos []list.Item
 
 	// Go through all files with the .dem extension in demos folder
 	files, err := os.ReadDir("demos")
@@ -24,7 +22,7 @@ func getChoices() []string {
 			continue
 		}
 		if file.Name()[len(file.Name())-4:] == ".dem" {
-			availableDemos = append(availableDemos, file.Name())
+			availableDemos = append(availableDemos, item{title: file.Name(), desc: "A demo file"})
 		}
 	}
 
@@ -32,96 +30,65 @@ func getChoices() []string {
 	return availableDemos
 }
 
-type model struct {
-	filepicker   filepicker.Model
-	selectedFile string
-	quitting     bool
-	err          error
+var docStyle = lipgloss.NewStyle().Margin(1, 2)
+
+type item struct {
+	title, desc string
 }
 
-type clearErrorMsg struct{}
+func (i item) Title() string       { return i.title }
+func (i item) Description() string { return i.desc }
+func (i item) FilterValue() string { return i.title }
 
-func clearErrorAfter(t time.Duration) tea.Cmd {
-	return tea.Tick(t, func(_ time.Time) tea.Msg {
-		return clearErrorMsg{}
-	})
+type model struct {
+	list list.Model
 }
 
 func (m model) Init() tea.Cmd {
-	return m.filepicker.Init()
+	return nil
 }
 
 func (m model) Update(msg tea.Msg) (tea.Model, tea.Cmd) {
 	switch msg := msg.(type) {
 	case tea.KeyMsg:
-		switch msg.String() {
-		case "ctrl+c", "q":
-			m.quitting = true
+		if msg.String() == "ctrl+c" {
 			return m, tea.Quit
 		}
-	case clearErrorMsg:
-		m.err = nil
+	case tea.WindowSizeMsg:
+		h, v := docStyle.GetFrameSize()
+		m.list.SetSize(msg.Width-h, msg.Height-v)
 	}
 
 	var cmd tea.Cmd
-	m.filepicker, cmd = m.filepicker.Update(msg)
-
-	// Did the user select a file?
-	if didSelect, path := m.filepicker.DidSelectFile(msg); didSelect {
-		// Get the path of the selected file.
-		m.selectedFile = path
-	}
-
-	// Did the user select a disabled file?
-	// This is only necessary to display an error to the user.
-	if didSelect, path := m.filepicker.DidSelectDisabledFile(msg); didSelect {
-		// Let's clear the selectedFile and display an error.
-		m.err = errors.New(path + " is not valid.")
-		m.selectedFile = ""
-		return m, tea.Batch(cmd, clearErrorAfter(2*time.Second))
-	}
-
+	m.list, cmd = m.list.Update(msg)
 	return m, cmd
 }
 
 func (m model) View() string {
-	if m.quitting {
-		return ""
-	}
-	var s strings.Builder
-	s.WriteString("\n  ")
-	if m.err != nil {
-		s.WriteString(m.filepicker.Styles.DisabledFile.Render(m.err.Error()))
-	} else if m.selectedFile == "" {
-		s.WriteString("Pick a file:")
-	} else {
-		s.WriteString("Selected file: " + m.filepicker.Styles.Selected.Render(m.selectedFile))
-	}
-	s.WriteString("\n\n" + m.filepicker.View() + "\n")
-	s.WriteString("Current path " + m.filepicker.Styles.DisabledSelected.Render(m.filepicker.CurrentDirectory))
-	return s.String()
+	return docStyle.Render(m.list.View())
 }
 
 func main() {
-	// Uncomment for filepicker
-	//fp := filepicker.New()
-	//fp.AllowedTypes = []string{".dem"}
-	//// Get demos directory
-	//fp.CurrentDirectory = "demos"
-	//
-	//m := model{
-	//	filepicker: fp,
-	//}
-	//tm, _ := tea.NewProgram(&m).Run()
-	//mm := tm.(model)
-	//fmt.Println("\n  You selected: " + m.filepicker.Styles.Selected.Render(mm.selectedFile) + "\n")
-	//
-	//if mm.selectedFile == "" {
-	//	fmt.Println("No file selected. Exiting...")
-	//	return
-	//}
+	// Uncomment for list
+	items := []list.Item{
+		item{title: "Raspberry Pi’s", desc: "I have ’em all over my house"},
+		item{title: "Nutella", desc: "It's good on toast"},
+		item{title: "Pineapple", desc: "I like it on pizza"},
+	}
+
+	//items = getChoices()
+
+	m := model{list: list.New(items, list.NewDefaultDelegate(), 0, 0)}
+	m.list.Title = "Demos"
+
+	p := tea.NewProgram(m, tea.WithAltScreen())
+
+	if _, err := p.Run(); err != nil {
+		fmt.Println("Error running program:", err)
+		os.Exit(1)
+	}
 
 	// Start the parser
 	//Start("demos/" + "comp_anc_15_4_2024_17_38.dem")
-	Start("demos/" + "comp_anc_15_4_2024_17_38.dem")
+	//Start("demos/" + "comp_anc_15_4_2024_17_38.dem")
 }
