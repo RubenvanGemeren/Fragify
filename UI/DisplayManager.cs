@@ -1,6 +1,6 @@
-using FragifyTracker.Models;
 using Spectre.Console;
 using Spectre.Console.Rendering;
+using FragifyTracker.Models;
 
 namespace FragifyTracker.UI;
 
@@ -9,59 +9,102 @@ public class DisplayManager
     private readonly Table _gameInfoTable;
     private readonly Table _playerStatsTable;
     private readonly Table _sessionStatsTable;
-    private readonly Table _bombInfoTable;
     private readonly Table _debugInfoTable;
-    private DateTime _lastUpdate = DateTime.MinValue;
+    private readonly Panel _progressPanel;
+    private GameStats? _lastStats;
+    private bool _isFirstDisplay = true;
 
     public DisplayManager()
     {
+        // Create tables once
         _gameInfoTable = CreateGameInfoTable();
         _playerStatsTable = CreatePlayerStatsTable();
         _sessionStatsTable = CreateSessionStatsTable();
-        _bombInfoTable = CreateBombInfoTable();
         _debugInfoTable = CreateDebugInfoTable();
+        _progressPanel = CreateProgressPanel();
     }
 
     public void UpdateDisplay(GameStats? stats)
     {
         if (stats == null) return;
 
-        // Only update display every 500ms to avoid flickering
-        if ((DateTime.Now - _lastUpdate).TotalMilliseconds < 500) return;
-        _lastUpdate = DateTime.Now;
+        // Only update if stats have actually changed
+        if (_lastStats != null && !HasStatsChanged(_lastStats, stats))
+        {
+            return;
+        }
 
-        AnsiConsole.Clear();
+        _lastStats = stats.Clone();
 
-        // Display header
-        DisplayHeader();
+        if (_isFirstDisplay)
+        {
+            // First time: display everything
+            DisplayFullLayout(stats);
+            _isFirstDisplay = false;
+        }
+        else
+        {
+            // Subsequent updates: update tables and refresh display
+            UpdateTables(stats);
+            RefreshDisplay();
+        }
+    }
 
-        // Display debug info prominently at the top
-        DisplayDebugInfo(stats);
-        AnsiConsole.WriteLine();
-
-        // Display main content in a grid layout
-        var grid = new Grid()
+    private void RefreshDisplay()
+    {
+        // Force a refresh by redrawing the current layout
+        // This ensures table updates are visible
+        var currentLayout = new Grid()
             .AddColumn(new GridColumn().NoWrap().PadRight(2))
             .AddColumn(new GridColumn().NoWrap().PadRight(2));
 
-        grid.AddRow(_gameInfoTable, _playerStatsTable);
-        AnsiConsole.Write(grid);
+        currentLayout.AddRow(_gameInfoTable, _playerStatsTable);
+
+        // Clear and redraw to show updates
+        AnsiConsole.Clear();
+        DisplayHeader();
+        DisplayDebugInfo(_lastStats!);
+        AnsiConsole.WriteLine();
+        AnsiConsole.Write(currentLayout);
+        AnsiConsole.WriteLine();
+        DisplayProgressBars(_lastStats!);
         AnsiConsole.WriteLine();
 
-        // Display progress bars
-        DisplayProgressBars(stats);
-        AnsiConsole.WriteLine();
-
-        // Display session and bomb info
         var bottomGrid = new Grid()
             .AddColumn(new GridColumn().NoWrap().PadRight(2))
             .AddColumn(new GridColumn().NoWrap().PadRight(2));
-
-        bottomGrid.AddRow(_sessionStatsTable, _bombInfoTable);
+        bottomGrid.AddRow(_sessionStatsTable, _debugInfoTable);
         AnsiConsole.Write(bottomGrid);
+    }
 
-        // Update tables with current data
-        UpdateTables(stats);
+    private bool HasStatsChanged(GameStats oldStats, GameStats newStats)
+    {
+        return oldStats.MapName != newStats.MapName ||
+               oldStats.GameMode != newStats.GameMode ||
+               oldStats.RoundPhase != newStats.RoundPhase ||
+               oldStats.PlayerHealth != newStats.PlayerHealth ||
+               oldStats.PlayerArmor != newStats.PlayerArmor ||
+               oldStats.PlayerMoney != newStats.PlayerMoney ||
+               oldStats.PlayerKills != newStats.PlayerKills ||
+               oldStats.PlayerDeaths != newStats.PlayerDeaths ||
+               oldStats.PlayerAssists != newStats.PlayerAssists ||
+               oldStats.PlayerMVPs != newStats.PlayerMVPs ||
+               oldStats.PlayerScore != newStats.PlayerScore ||
+               oldStats.ScoreT != newStats.ScoreT ||
+               oldStats.ScoreCT != newStats.ScoreCT ||
+               oldStats.BombState != newStats.BombState ||
+               oldStats.RoundNumber != newStats.RoundNumber ||
+               oldStats.RoundTime != newStats.RoundTime ||
+               oldStats.SessionDuration != newStats.SessionDuration ||
+               oldStats.TotalRounds != newStats.TotalRounds ||
+               oldStats.RoundsWon != newStats.RoundsWon ||
+               oldStats.RoundsLost != newStats.RoundsLost ||
+               oldStats.WinRate != newStats.WinRate ||
+               oldStats.LastFlashDuration != newStats.LastFlashDuration ||
+               oldStats.MessagesReceived != newStats.MessagesReceived ||
+               oldStats.LastMessageTime != newStats.LastMessageTime ||
+               oldStats.IsConnected != newStats.IsConnected ||
+               oldStats.ConnectionStatus != newStats.ConnectionStatus;
     }
 
     private void DisplayHeader()
@@ -144,11 +187,11 @@ public class DisplayManager
 
     private Table CreateGameInfoTable()
     {
-        var table = new Table();
-        table.Title = new TableTitle("[bold blue]Game Information[/]");
-        table.Border = TableBorder.Rounded;
-        table.AddColumn("Property");
-        table.AddColumn("Value");
+        var table = new Table()
+            .Title("[bold blue]Game Information[/]")
+            .Border(TableBorder.Rounded)
+            .AddColumn("Property")
+            .AddColumn("Value");
 
         table.AddRow("Map", "");
         table.AddRow("Mode", "");
@@ -161,11 +204,11 @@ public class DisplayManager
 
     private Table CreatePlayerStatsTable()
     {
-        var table = new Table();
-        table.Title = new TableTitle("[bold green]Player Statistics[/]");
-        table.Border = TableBorder.Rounded;
-        table.AddColumn("Stat");
-        table.AddColumn("Value");
+        var table = new Table()
+            .Title("[bold green]Player Statistics[/]")
+            .Border(TableBorder.Rounded)
+            .AddColumn("Stat")
+            .AddColumn("Value");
 
         table.AddRow("Kills", "");
         table.AddRow("Deaths", "");
@@ -181,11 +224,11 @@ public class DisplayManager
 
     private Table CreateSessionStatsTable()
     {
-        var table = new Table();
-        table.Title = new TableTitle("[bold yellow]Session Statistics[/]");
-        table.Border = TableBorder.Rounded;
-        table.AddColumn("Stat");
-        table.AddColumn("Value");
+        var table = new Table()
+            .Title("[bold yellow]Session Statistics[/]")
+            .Border(TableBorder.Rounded)
+            .AddColumn("Stat")
+            .AddColumn("Value");
 
         table.AddRow("Duration", "");
         table.AddRow("Total Rounds", "");
@@ -196,29 +239,13 @@ public class DisplayManager
         return table;
     }
 
-    private Table CreateBombInfoTable()
-    {
-        var table = new Table();
-        table.Title = new TableTitle("[bold red]Bomb Information[/]");
-        table.Border = TableBorder.Rounded;
-        table.AddColumn("Property");
-        table.AddColumn("Value");
-
-        table.AddRow("State", "");
-        table.AddRow("Planted", "");
-        table.AddRow("Defused", "");
-        table.AddRow("Exploded", "");
-
-        return table;
-    }
-
     private Table CreateDebugInfoTable()
     {
-        var table = new Table();
-        table.Title = new TableTitle("[bold magenta]Debug Details[/]");
-        table.Border = TableBorder.Rounded;
-        table.AddColumn("Property");
-        table.AddColumn("Value");
+        var table = new Table()
+            .Title("[bold magenta]Debug Details[/]")
+            .Border(TableBorder.Rounded)
+            .AddColumn("Property")
+            .AddColumn("Value");
 
         table.AddRow("Last Message", "");
         table.AddRow("Connection", "");
@@ -228,11 +255,18 @@ public class DisplayManager
         return table;
     }
 
+    private Panel CreateProgressPanel()
+    {
+        return new Panel("")
+            .Header("[bold cyan]Progress Bars[/]")
+            .Border(BoxBorder.Rounded);
+    }
+
     private void UpdateTables(GameStats stats)
     {
         // Update Game Info Table
-        _gameInfoTable.UpdateCell(0, 1, stats.MapName);
-        _gameInfoTable.UpdateCell(1, 1, stats.GameMode);
+        _gameInfoTable.UpdateCell(0, 1, stats.MapName ?? "Unknown");
+        _gameInfoTable.UpdateCell(1, 1, stats.GameMode ?? "Unknown");
         _gameInfoTable.UpdateCell(2, 1, stats.RoundNumber.ToString());
         _gameInfoTable.UpdateCell(3, 1, GetPhaseColor(stats.RoundPhase).ToString());
         _gameInfoTable.UpdateCell(4, 1, $"[bold]{stats.GetScoreDisplay()}[/]");
@@ -244,7 +278,7 @@ public class DisplayManager
         _playerStatsTable.UpdateCell(3, 1, $"[yellow]{stats.PlayerMVPs}[/]");
         _playerStatsTable.UpdateCell(4, 1, $"[bold]{stats.PlayerScore}[/]");
         _playerStatsTable.UpdateCell(5, 1, $"${stats.PlayerMoney:N0}");
-        _playerStatsTable.UpdateCell(6, 1, stats.ActiveWeapon);
+        _playerStatsTable.UpdateCell(6, 1, stats.ActiveWeapon ?? "Unknown");
         _playerStatsTable.UpdateCell(7, 1, GetTeamColor(stats.PlayerTeam).ToString());
 
         // Update Session Stats Table
@@ -254,12 +288,6 @@ public class DisplayManager
         _sessionStatsTable.UpdateCell(3, 1, $"[red]{stats.RoundsLost}[/]");
         _sessionStatsTable.UpdateCell(4, 1, $"[bold]{stats.WinRate:F1}%[/]");
 
-        // Update Bomb Info Table
-        _bombInfoTable.UpdateCell(0, 1, GetBombStateColor(stats.BombState).ToString());
-        _bombInfoTable.UpdateCell(1, 1, stats.BombPlantedTime?.ToString("HH:mm:ss") ?? "N/A");
-        _bombInfoTable.UpdateCell(2, 1, stats.BombDefusedTime?.ToString("HH:mm:ss") ?? "N/A");
-        _bombInfoTable.UpdateCell(3, 1, stats.BombExplodedTime?.ToString("HH:mm:ss") ?? "N/A");
-
         // Update Debug Info Table
         _debugInfoTable.UpdateCell(0, 1, stats.LastMessageContent.Length > 50 ? stats.LastMessageContent.Substring(0, 50) + "..." : stats.LastMessageContent);
         _debugInfoTable.UpdateCell(1, 1, stats.IsConnected ? "[green]Connected[/]" : "[red]Disconnected[/]");
@@ -267,38 +295,57 @@ public class DisplayManager
         _debugInfoTable.UpdateCell(3, 1, stats.LastMessageTime?.ToString("HH:mm:ss") ?? "Never");
     }
 
+    private void DisplayFullLayout(GameStats stats)
+    {
+        AnsiConsole.Clear();
+        DisplayHeader();
+        DisplayDebugInfo(stats);
+        AnsiConsole.WriteLine();
+
+        var grid = new Grid()
+            .AddColumn(new GridColumn().NoWrap().PadRight(2))
+            .AddColumn(new GridColumn().NoWrap().PadRight(2));
+
+        grid.AddRow(_gameInfoTable, _playerStatsTable);
+        AnsiConsole.Write(grid);
+        AnsiConsole.WriteLine();
+
+        DisplayProgressBars(stats);
+        AnsiConsole.WriteLine();
+
+        var bottomGrid = new Grid()
+            .AddColumn(new GridColumn().NoWrap().PadRight(2))
+            .AddColumn(new GridColumn().NoWrap().PadRight(2));
+        bottomGrid.AddRow(_sessionStatsTable, _debugInfoTable);
+        AnsiConsole.Write(bottomGrid);
+
+        // Update tables with current data
+        UpdateTables(stats);
+    }
+
     private IRenderable GetPhaseColor(string phase)
     {
-        return phase switch
+        if (string.IsNullOrEmpty(phase)) return new Markup("[dim]Unknown[/]");
+
+        return phase.ToLower() switch
         {
-            "Live" => new Markup("[bold green]Live[/]"),
-            "FreezeTime" => new Markup("[bold yellow]Freeze Time[/]"),
-            "Over" => new Markup("[bold red]Round Over[/]"),
-            "Warmup" => new Markup("[bold blue]Warmup[/]"),
-            _ => new Markup(phase)
+            "live" => new Markup("[bold green]Live[/]"),
+            "freezetime" => new Markup("[bold yellow]Freeze Time[/]"),
+            "over" => new Markup("[bold red]Round Over[/]"),
+            "warmup" => new Markup("[bold blue]Warmup[/]"),
+            _ => new Markup($"[dim]{phase}[/]")
         };
     }
 
     private IRenderable GetTeamColor(string team)
     {
-        return team switch
-        {
-            "T" => new Markup("[bold red]Terrorist[/]"),
-            "CT" => new Markup("[bold blue]Counter-Terrorist[/]"),
-            _ => new Markup(team)
-        };
-    }
+        if (string.IsNullOrEmpty(team)) return new Markup("[dim]Unknown[/]");
 
-    private IRenderable GetBombStateColor(string state)
-    {
-        return state switch
+        return team.ToLower() switch
         {
-            "Planted" => new Markup("[bold red]Planted[/]"),
-            "Defused" => new Markup("[bold green]Defused[/]"),
-            "Exploded" => new Markup("[bold red]Exploded[/]"),
-            "Planting" => new Markup("[bold yellow]Planting...[/]"),
-            "Defusing" => new Markup("[bold yellow]Defusing...[/]"),
-            _ => new Markup(state)
+            "t" => new Markup("[bold red]Terrorist[/]"),
+            "ct" => new Markup("[bold blue]Counter-Terrorist[/]"),
+            _ => new Markup($"[dim]{team}[/]")
         };
     }
 }

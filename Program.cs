@@ -12,6 +12,8 @@ class Program
     private static GameTrackerService? _trackerService;
     private static bool _isRunning = true;
     private static DateTime _lastMessageTime = DateTime.MinValue;
+    private static bool _testMode = false;
+    private static TestDataGenerator? _testDataGenerator;
 
     static async Task Main(string[] args)
     {
@@ -26,11 +28,20 @@ class Program
         AnsiConsole.MarkupLine("[dim]Press Ctrl+C to exit[/]\n");
 
         // Parse command line arguments
-        var port = ParsePortFromArgs(args);
+        var (port, testMode) = ParseArgs(args);
+        _testMode = testMode;
 
         try
         {
-            await InitializeGameTracker(port);
+            if (_testMode)
+            {
+                await InitializeTestMode();
+            }
+            else
+            {
+                await InitializeGameTracker(port);
+            }
+
             await RunMainLoop();
         }
         catch (Exception ex)
@@ -43,23 +54,51 @@ class Program
         }
     }
 
-    private static int ParsePortFromArgs(string[] args)
+    private static (int port, bool testMode) ParseArgs(string[] args)
     {
-        // Default port
+        // Default values
         var port = 3000;
+        var testMode = false;
 
-        for (int i = 0; i < args.Length - 1; i++)
+        for (int i = 0; i < args.Length; i++)
         {
             if (args[i] == "--port" || args[i] == "-p")
             {
-                if (int.TryParse(args[i + 1], out int parsedPort))
+                if (i + 1 < args.Length && int.TryParse(args[i + 1], out int parsedPort))
                 {
                     port = parsedPort;
                 }
             }
+            else if (args[i] == "--test" || args[i] == "-t")
+            {
+                testMode = true;
+            }
         }
 
-        return port;
+        return (port, testMode);
+    }
+
+    private static async Task InitializeTestMode()
+    {
+        AnsiConsole.MarkupLine("[bold yellow]🧪 TEST MODE ENABLED[/]\n");
+        AnsiConsole.MarkupLine("[yellow]This mode simulates CS:GO game state events for testing.[/]\n");
+
+        _trackerService = new GameTrackerService();
+        _trackerService.OnConnectionEstablished();
+
+        _testDataGenerator = new TestDataGenerator(_trackerService);
+
+        AnsiConsole.MarkupLine("[green]✓[/] Test mode initialized");
+        AnsiConsole.MarkupLine("[cyan]Simulating game events every 3 seconds...[/]\n");
+
+        AnsiConsole.MarkupLine("[bold yellow]Test Controls:[/]");
+        AnsiConsole.MarkupLine("[yellow]Press '1' - Simulate round start[/]");
+        AnsiConsole.MarkupLine("[yellow]Press '2' - Simulate bomb planted[/]");
+        AnsiConsole.MarkupLine("[yellow]Press '3' - Simulate bomb defused[/]");
+        AnsiConsole.MarkupLine("[yellow]Press '4' - Simulate round end[/]");
+        AnsiConsole.MarkupLine("[yellow]Press '5' - Simulate player flash[/]");
+        AnsiConsole.MarkupLine("[yellow]Press '6' - Toggle auto-simulation[/]");
+        AnsiConsole.MarkupLine("[yellow]Press 'r' - Reset session[/]\n");
     }
 
     private static async Task InitializeGameTracker(int port)
@@ -107,8 +146,19 @@ class Program
         {
             try
             {
-                // Check if we're still receiving messages
-                CheckConnectionStatus();
+                if (_testMode)
+                {
+                    // Handle test mode input
+                    HandleTestInput();
+
+                    // Auto-simulation
+                    _testDataGenerator?.Update();
+                }
+                else
+                {
+                    // Check if we're still receiving messages
+                    CheckConnectionStatus();
+                }
 
                 displayManager.UpdateDisplay(_trackerService?.GetCurrentStats());
                 await Task.Delay(100); // Update every 100ms
@@ -117,6 +167,45 @@ class Program
             {
                 AnsiConsole.WriteException(ex);
                 await Task.Delay(1000);
+            }
+        }
+    }
+
+    private static void HandleTestInput()
+    {
+        if (Console.KeyAvailable)
+        {
+            var key = Console.ReadKey(true);
+            switch (key.KeyChar)
+            {
+                case '1':
+                    _testDataGenerator?.SimulateRoundStart();
+                    AnsiConsole.MarkupLine("[bold green]🎯 Test: Round Started![/]");
+                    break;
+                case '2':
+                    _testDataGenerator?.SimulateBombPlanted();
+                    AnsiConsole.MarkupLine("[bold yellow]💣 Test: Bomb Planted![/]");
+                    break;
+                case '3':
+                    _testDataGenerator?.SimulateBombDefused();
+                    AnsiConsole.MarkupLine("[bold green]✅ Test: Bomb Defused![/]");
+                    break;
+                case '4':
+                    _testDataGenerator?.SimulateRoundEnd();
+                    AnsiConsole.MarkupLine("[bold red]🏁 Test: Round Ended![/]");
+                    break;
+                case '5':
+                    _testDataGenerator?.SimulatePlayerFlash();
+                    AnsiConsole.MarkupLine("[bold yellow]😵 Test: Player Flashed![/]");
+                    break;
+                case '6':
+                    _testDataGenerator?.ToggleAutoSimulation();
+                    AnsiConsole.MarkupLine($"[bold cyan]🔄 Test: Auto-simulation {(_testDataGenerator?.IsAutoSimulationEnabled ?? false ? "enabled" : "disabled")}[/]");
+                    break;
+                case 'r':
+                    _trackerService?.ResetSession();
+                    AnsiConsole.MarkupLine("[bold magenta]🔄 Test: Session Reset![/]");
+                    break;
             }
         }
     }

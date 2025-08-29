@@ -92,4 +92,54 @@ public class GameStats
             return $"{timeSince.TotalMinutes:F0}m ago";
         return $"{timeSince.TotalHours:F0}h ago";
     }
+
+    public GameStats Clone()
+    {
+        return new GameStats
+        {
+            // Game Info
+            MapName = this.MapName,
+            GameMode = this.GameMode,
+            RoundPhase = this.RoundPhase,
+            RoundNumber = this.RoundNumber,
+            RoundTime = this.RoundTime,
+            ScoreT = this.ScoreT,
+            ScoreCT = this.ScoreCT,
+            BombState = this.BombState,
+            BombPlantedTime = this.BombPlantedTime,
+            BombDefusedTime = this.BombDefusedTime,
+            BombExplodedTime = this.BombExplodedTime,
+
+            // Player Info
+            PlayerHealth = this.PlayerHealth,
+            PlayerArmor = this.PlayerArmor,
+            PlayerMoney = this.PlayerMoney,
+            PlayerKills = this.PlayerKills,
+            PlayerDeaths = this.PlayerDeaths,
+            PlayerAssists = this.PlayerAssists,
+            PlayerMVPs = this.PlayerMVPs,
+            PlayerScore = this.PlayerScore,
+            PlayerTeam = this.PlayerTeam,
+            ActiveWeapon = this.ActiveWeapon,
+
+            // Session Info
+            SessionDuration = this.SessionDuration,
+            TotalRounds = this.TotalRounds,
+            RoundsWon = this.RoundsWon,
+            RoundsLost = this.RoundsLost,
+            WinRate = this.WinRate,
+            RoundStartTime = this.RoundStartTime,
+
+            // Flash Info
+            LastFlashDuration = this.LastFlashDuration,
+            LastFlashTime = this.LastFlashTime,
+
+            // Debug Info
+            MessagesReceived = this.MessagesReceived,
+            LastMessageTime = this.LastMessageTime,
+            IsConnected = this.IsConnected,
+            ConnectionStatus = this.ConnectionStatus,
+            LastMessageContent = this.LastMessageContent
+        };
+    }
 }
