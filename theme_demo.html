@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragify - Map Theme Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: var(--background-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
+            color: var(--text-color, white);
+            min-height: 100vh;
+            transition: all 0.5s ease;
+        }
+
+        .header {
+            background: rgba(0, 0, 0, 0.3);
+            padding: 1rem;
+            text-align: center;
+            backdrop-filter: blur(10px);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            color: var(--primary-color, #4ade80);
+            text-shadow: 0 0 20px var(--primary-color-shadow, rgba(74, 222, 128, 0.5));
+        }
+
+        .header p {
+            color: var(--text-color, #cbd5e1);
+            margin-top: 0.5rem;
+        }
+
+        .theme-info {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .theme-name {
+            display: block;
+            font-weight: bold;
+            color: var(--primary-color, #4ade80);
+            font-size: 1.1rem;
+        }
+
+        .theme-description {
+            display: block;
+            color: var(--text-color, #cbd5e1);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
+        }
+
+        .theme-selector {
+            margin: 2rem auto;
+            text-align: center;
+            max-width: 800px;
+        }
+
+        .theme-buttons {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .theme-btn {
+            padding: 1rem;
+            border: none;
+            border-radius: 8px;
+            background: var(--card-background, rgba(255, 255, 255, 0.1));
+            color: var(--text-color, white);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.2));
+        }
+
+        .theme-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .demo-card {
+            background: var(--card-background, rgba(255, 255, 255, 0.1));
+            border-radius: 15px;
+            padding: 1.5rem;
+            margin: 2rem auto;
+            max-width: 600px;
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.2));
+        }
+
+        .demo-card h2 {
+            color: var(--primary-color, #4ade80);
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            border-bottom: 2px solid var(--primary-color, #4ade80);
+            padding-bottom: 0.5rem;
+        }
+
+        .color-palette {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            gap: 1rem;
+            margin-top: 1rem;
+        }
+
+        .color-swatch {
+            padding: 1rem;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: bold;
+            color: white;
+            text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+        }
+
+        .primary-color { background: var(--primary-color, #4ade80); }
+        .secondary-color { background: var(--secondary-color, #22c55e); }
+        .accent-color { background: var(--accent-color, #fbbf24); }
+        .danger-color { background: var(--danger-color, #ef4444); }
+        .success-color { background: var(--success-color, #10b981); }
+        .warning-color { background: var(--warning-color, #f59e0b); }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🎯 Fragify</h1>
+        <p>Map Theme Demo - Counter-Strike: Global Offensive</p>
+        <div class="theme-info">
+            <span class="theme-name" id="theme-name">Default Theme</span>
+            <span class="theme-description" id="theme-description">CS:GO Dashboard</span>
+        </div>
+    </div>
+
+    <div class="theme-selector">
+        <h2>Select a Map Theme</h2>
+        <div class="theme-buttons">
+            <button class="theme-btn" onclick="applyTheme('default')">Default</button>
+            <button class="theme-btn" onclick="applyTheme('de_dust2')">Dust II</button>
+            <button class="theme-btn" onclick="applyTheme('de_mirage')">Mirage</button>
+            <button class="theme-btn" onclick="applyTheme('de_inferno')">Inferno</button>
+            <button class="theme-btn" onclick="applyTheme('de_cache')">Cache</button>
+            <button class="theme-btn" onclick="applyTheme('de_overpass')">Overpass</button>
+            <button class="theme-btn" onclick="applyTheme('de_nuke')">Nuke</button>
+            <button class="theme-btn" onclick="applyTheme('de_ancient')">Ancient</button>
+            <button class="theme-btn" onclick="applyTheme('de_vertigo')">Vertigo</button>
+        </div>
+    </div>
+
+    <div class="demo-card">
+        <h2>Current Theme Colors</h2>
+        <div class="color-palette">
+            <div class="color-swatch primary-color">Primary</div>
+            <div class="color-swatch secondary-color">Secondary</div>
+            <div class="color-swatch accent-color">Accent</div>
+            <div class="color-swatch danger-color">Danger</div>
+            <div class="color-swatch success-color">Success</div>
+            <div class="color-swatch warning-color">Warning</div>
+        </div>
+    </div>
+
+    <script>
+        const themes = {
+            "default": {
+                name: "Default",
+                description: "Default CS:GO theme",
+                primaryColor: "#4ade80",
+                secondaryColor: "#22c55e",
+                backgroundGradient: "linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)",
+                cardBackground: "rgba(255, 255, 255, 0.1)",
+                cardBorder: "rgba(255, 255, 255, 0.2)",
+                textColor: "#ffffff",
+                accentColor: "#fbbf24",
+                dangerColor: "#ef4444",
+                successColor: "#10b981",
+                warningColor: "#f59e0b"
+            },
+            "de_dust2": {
+                name: "Dust II",
+                description: "Classic desert map theme",
+                primaryColor: "#d4af37",
+                secondaryColor: "#b8860b",
+                backgroundGradient: "linear-gradient(135deg, #8B4513 0%, #D4AF37 50%, #F4A460 100%)",
+                cardBackground: "rgba(139, 69, 19, 0.2)",
+                cardBorder: "rgba(212, 175, 55, 0.3)",
+                textColor: "#F5DEB3",
+                accentColor: "#CD853F",
+                dangerColor: "#DC143C",
+                successColor: "#32CD32",
+                warningColor: "#FFD700"
+            },
+            "de_mirage": {
+                name: "Mirage",
+                description: "Middle Eastern desert theme",
+                primaryColor: "#8B4513",
+                secondaryColor: "#CD853F",
+                backgroundGradient: "linear-gradient(135deg, #2F1B14 0%, #8B4513 50%, #DAA520 100%)",
+                cardBackground: "rgba(47, 27, 20, 0.2)",
+                cardBorder: "rgba(139, 69, 19, 0.3)",
+                textColor: "#F5DEB3",
+                accentColor: "#B8860B",
+                dangerColor: "#B22222",
+                successColor: "#228B22",
+                warningColor: "#FF8C00"
+            },
+            "de_inferno": {
+                name: "Inferno",
+                description: "Fiery Italian village theme",
+                primaryColor: "#FF4500",
+                secondaryColor: "#FF6347",
+                backgroundGradient: "linear-gradient(135deg, #1A0F0F 0%, #8B0000 50%, #FF4500 100%)",
+                cardBackground: "rgba(26, 15, 15, 0.2)",
+                cardBorder: "rgba(255, 69, 0, 0.3)",
+                textColor: "#FFE4E1",
+                accentColor: "#FF8C00",
+                dangerColor: "#DC143C",
+                successColor: "#00FF7F",
+                warningColor: "#FFD700"
+            },
+            "de_cache": {
+                name: "Cache",
+                description: "Industrial urban theme",
+                primaryColor: "#708090",
+                secondaryColor: "#4682B4",
+                backgroundGradient: "linear-gradient(135deg, #1C1C1C 0%, #2F4F4F 50%, #708090 100%)",
+                cardBackground: "rgba(28, 28, 28, 0.2)",
+                cardBorder: "rgba(112, 128, 144, 0.3)",
+                textColor: "#E0E0E0",
+                accentColor: "#87CEEB",
+                dangerColor: "#FF6B6B",
+                successColor: "#98FB98",
+                warningColor: "#FFB6C1"
+            },
+            "de_overpass": {
+                name: "Overpass",
+                description: "Modern urban infrastructure theme",
+                primaryColor: "#2E8B57",
+                secondaryColor: "#20B2AA",
+                backgroundGradient: "linear-gradient(135deg, #0F1410 0%, #2E8B57 50%, #20B2AA 100%)",
+                cardBackground: "rgba(15, 20, 16, 0.2)",
+                cardBorder: "rgba(46, 139, 87, 0.3)",
+                textColor: "#E0F6FF",
+                accentColor: "#00CED1",
+                dangerColor: "#FF4500",
+                successColor: "#00FF7F",
+                warningColor: "#FFD700"
+            },
+            "de_nuke": {
+                name: "Nuke",
+                description: "Nuclear facility theme",
+                primaryColor: "#32CD32",
+                secondaryColor: "#00FF00",
+                backgroundGradient: "linear-gradient(135deg, #0F1A0F 0%, #228B22 50%, #32CD32 100%)",
+                cardBackground: "rgba(15, 26, 15, 0.2)",
+                cardBorder: "rgba(50, 205, 50, 0.3)",
+                textColor: "#E0FFE0",
+                accentColor: "#00FF7F",
+                dangerColor: "#FF0000",
+                successColor: "#00FF00",
+                warningColor: "#FFFF00"
+            },
+            "de_ancient": {
+                name: "Ancient",
+                description: "Mystical ancient ruins theme",
+                primaryColor: "#DAA520",
+                secondaryColor: "#B8860B",
+                backgroundGradient: "linear-gradient(135deg, #2F1B14 0%, #8B4513 50%, #DAA520 100%)",
+                cardBackground: "rgba(47, 27, 20, 0.2)",
+                cardBorder: "rgba(218, 165, 32, 0.3)",
+                textColor: "#F5DEB3",
+                accentColor: "#CD853F",
+                dangerColor: "#B22222",
+                successColor: "#228B22",
+                warningColor: "#FF8C00"
+            },
+            "de_vertigo": {
+                name: "Vertigo",
+                description: "High-rise skyscraper theme",
+                primaryColor: "#87CEEB",
+                secondaryColor: "#4682B4",
+                backgroundGradient: "linear-gradient(135deg, #1C1C1C 0%, #2F4F4F 50%, #87CEEB 100%)",
+                cardBackground: "rgba(28, 28, 28, 0.2)",
+                cardBorder: "rgba(135, 206, 235, 0.3)",
+                textColor: "#E0F6FF",
+                accentColor: "#00CED1",
+                dangerColor: "#FF6B6B",
+                successColor: "#98FB98",
+                warningColor: "#FFB6C1"
+            }
+        };
+
+        function applyTheme(themeKey) {
+            const theme = themes[themeKey];
+            if (!theme) return;
+
+            // Update theme info display
+            document.getElementById('theme-name').textContent = theme.name;
+            document.getElementById('theme-description').textContent = theme.description;
+
+            // Apply CSS variables to root element
+            const root = document.documentElement;
+            root.style.setProperty('--primary-color', theme.primaryColor);
+            root.style.setProperty('--secondary-color', theme.secondaryColor);
+            root.style.setProperty('--background-gradient', theme.backgroundGradient);
+            root.style.setProperty('--card-background', theme.cardBackground);
+            root.style.setProperty('--card-border', theme.cardBorder);
+            root.style.setProperty('--text-color', theme.textColor);
+            root.style.setProperty('--accent-color', theme.accentColor);
+            root.style.setProperty('--danger-color', theme.dangerColor);
+            root.style.setProperty('--success-color', theme.successColor);
+            root.style.setProperty('--warning-color', theme.warningColor);
+
+            // Add shadow variants for better visual effects
+            root.style.setProperty('--primary-color-shadow', theme.primaryColor + '80');
+        }
+
+        // Apply default theme on load
+        document.addEventListener('DOMContentLoaded', function() {
+            applyTheme('default');
+        });
+    </script>
+</body>
+</html>

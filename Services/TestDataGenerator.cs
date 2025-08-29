@@ -1,16 +1,23 @@
+using FragifyTracker.Models;
 using CSGSI;
-using CSGSI.Nodes;
-using FragifyTracker.Services;
 
 namespace FragifyTracker.Services;
 
 public class TestDataGenerator
 {
     private readonly GameTrackerService _trackerService;
-    private bool _autoSimulationEnabled = true;
+    private bool _autoSimulationEnabled = false;
     private DateTime _lastAutoUpdate = DateTime.Now;
-    private int _simulationStep = 0;
+    private int _currentRound = 0;
     private readonly Random _random = new Random();
+
+    // Game simulation state
+    private bool _gameInProgress = false;
+    private int _roundPhase = 0; // 0=freezetime, 1=live, 2=over
+    private int _roundTimer = 0;
+    private int _maxRounds = 24;
+    private int _scoreT = 0;
+    private int _scoreCT = 0;
 
     public bool IsAutoSimulationEnabled => _autoSimulationEnabled;
 
@@ -23,242 +30,362 @@ public class TestDataGenerator
     {
         if (!_autoSimulationEnabled) return;
 
-        var timeSinceLastUpdate = DateTime.Now - _lastAutoUpdate;
-        if (timeSinceLastUpdate.TotalSeconds >= 3) // Update every 3 seconds
+        var now = DateTime.Now;
+        if ((now - _lastAutoUpdate).TotalSeconds >= 3)
         {
-            SimulateGameStateUpdate();
-            _lastAutoUpdate = DateTime.Now;
+            SimulateGameProgression();
+            _lastAutoUpdate = now;
         }
     }
 
     public void SimulateRoundStart()
     {
+        if (_currentRound >= _maxRounds)
+        {
+            Console.WriteLine("Game already completed! Reset session to start new game.");
+            return;
+        }
+
+        _currentRound++;
+        _roundPhase = 0; // Freeze time
+        _roundTimer = 0;
+
         var gameState = CreateTestGameState();
-        gameState.Round.Phase = RoundPhase.Live;
-
         _trackerService.UpdateGameState(gameState);
-        _trackerService.OnRoundBegin();
 
-        _simulationStep = 1;
+        Console.WriteLine($"🎯 Round {_currentRound} started (Freeze Time)");
     }
 
     public void SimulateBombPlanted()
     {
+        if (_roundPhase != 1) return;
+
+        _roundPhase = 1; // Keep live phase
         var gameState = CreateTestGameState();
-        gameState.Round.Phase = RoundPhase.Live;
-        gameState.Bomb.State = BombState.Planted;
-
+        gameState.Bomb.State = CSGSI.Nodes.BombState.Planted;
         _trackerService.UpdateGameState(gameState);
-        _trackerService.OnBombPlanted();
 
-        _simulationStep = 2;
+        Console.WriteLine("💣 Bomb planted!");
     }
 
     public void SimulateBombDefused()
     {
+        if (_roundPhase != 1) return;
+
+        _scoreCT++;
+        _roundPhase = 2; // Round over
         var gameState = CreateTestGameState();
-        gameState.Round.Phase = RoundPhase.Live;
-        gameState.Bomb.State = BombState.Defused;
-
+        gameState.Bomb.State = CSGSI.Nodes.BombState.Defused;
         _trackerService.UpdateGameState(gameState);
-        _trackerService.OnBombDefused();
 
-        _simulationStep = 3;
+        Console.WriteLine("✅ Bomb defused! CT wins round!");
+    }
+
+    public void SimulateBombExploded()
+    {
+        if (_roundPhase != 1) return;
+
+        _scoreT++;
+        _roundPhase = 2; // Round over
+        var gameState = CreateTestGameState();
+        gameState.Bomb.State = CSGSI.Nodes.BombState.Exploded;
+        _trackerService.UpdateGameState(gameState);
+
+        Console.WriteLine("💥 Bomb exploded! T wins round!");
     }
 
     public void SimulateRoundEnd()
     {
-        var gameState = CreateTestGameState();
-        gameState.Round.Phase = RoundPhase.Over;
+        if (_roundPhase != 1) return;
 
-        // Simulate score changes
+        // Randomly determine winner
         if (_random.Next(2) == 0)
         {
-            gameState.Map.TeamT.Score++;
+            _scoreT++;
+            Console.WriteLine("🏆 T wins round!");
         }
         else
         {
-            gameState.Map.TeamCT.Score++;
+            _scoreCT++;
+            Console.WriteLine("🏆 CT wins round!");
         }
 
+        _roundPhase = 2; // Round over
+        var gameState = CreateTestGameState();
         _trackerService.UpdateGameState(gameState);
-        _trackerService.OnRoundEnd();
 
-        _simulationStep = 0;
+        Console.WriteLine($"Round {_currentRound} ended! Score: T {_scoreT} - CT {_scoreCT}");
     }
 
     public void SimulatePlayerFlash()
     {
         var gameState = CreateTestGameState();
-        gameState.Round.Phase = RoundPhase.Live;
-
         _trackerService.UpdateGameState(gameState);
-        _trackerService.OnPlayerFlashed(_random.Next(50, 200));
 
-        _simulationStep = 4;
+        Console.WriteLine("😵 Player flashed!");
+    }
+
+    public void GenerateInitialData()
+    {
+        Console.WriteLine("🎮 Generating initial test data...");
+
+        // Create a realistic initial game state with specific values
+        var initialJson = @"{
+            ""map"": {
+                ""name"": ""de_dust2"",
+                ""mode"": ""competitive"",
+                ""team_t"": {
+                    ""score"": 0
+                },
+                ""team_ct"": {
+                    ""score"": 0
+                }
+            },
+            ""round"": {
+                ""phase"": ""freezetime"",
+                ""score_t"": 0,
+                ""score_ct"": 0
+            },
+            ""player"": {
+                ""steamid"": ""76561198012345678"",
+                ""name"": ""FragifyPlayer"",
+                ""team"": ""T"",
+                ""state"": {
+                    ""health"": 100,
+                    ""armor"": 100,
+                    ""money"": 800,
+                    ""round_kills"": 0,
+                    ""round_totaldmg"": 0
+                },
+                ""match_stats"": {
+                    ""kills"": 0,
+                    ""assists"": 0,
+                    ""deaths"": 0,
+                    ""mvps"": 0,
+                    ""score"": 0
+                },
+                ""weapons"": {
+                    ""active_weapon"": {
+                        ""name"": ""weapon_knife"",
+                        ""paintkit"": ""default"",
+                        ""type"": ""rifle"",
+                        ""state"": ""active""
+                    }
+                }
+            },
+            ""bomb"": {
+                ""state"": ""carried"",
+                ""countdown"": ""0.0""
+            },
+            ""grenades"": {
+                ""hegrenade"": {
+                    ""owner"": ""76561198012345678"",
+                    ""position"": ""0.0, 0.0, 0.0"",
+                    ""velocity"": ""0.0, 0.0, 0.0"",
+                    ""lifetime"": ""0.0"",
+                    ""type"": ""weapon_hegrenade""
+                }
+            },
+            ""phase_countdowns"": {
+                ""phase_ends_in"": ""3""
+            }
+        }";
+
+        try
+        {
+            Console.WriteLine($"🔍 Creating GameState from JSON...");
+            var gameState = new GameState(initialJson);
+            Console.WriteLine($"✅ GameState created successfully");
+            Console.WriteLine($"   Map: {gameState.Map?.Name ?? "NULL"}");
+            Console.WriteLine($"   Player: {gameState.Player?.Name ?? "NULL"}");
+            Console.WriteLine($"   Round Phase: {gameState.Round?.Phase.ToString() ?? "NULL"}");
+
+            _trackerService.UpdateGameState(gameState);
+            Console.WriteLine("✅ Initial test data generated!");
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"❌ Error creating GameState: {ex.Message}");
+            Console.WriteLine($"❌ Stack trace: {ex.StackTrace}");
+        }
+    }
+
+    public void SimulateFullGame()
+    {
+        Console.WriteLine("🎮 Starting full game simulation...");
+        _gameInProgress = true;
+        _currentRound = 0;
+        _scoreT = 0;
+        _scoreCT = 0;
+
+        // Start first round
+        SimulateRoundStart();
+    }
+
+    public void SimulateNextRound()
+    {
+        if (_currentRound >= _maxRounds)
+        {
+            Console.WriteLine("Game completed! All rounds played.");
+            return;
+        }
+
+        SimulateRoundStart();
     }
 
     public void ToggleAutoSimulation()
     {
         _autoSimulationEnabled = !_autoSimulationEnabled;
-    }
-
-    private void SimulateGameStateUpdate()
-    {
-        var gameState = CreateTestGameState();
-
-        // Simulate different game phases
-        switch (_simulationStep)
-        {
-            case 0: // Round start
-                gameState.Round.Phase = RoundPhase.FreezeTime;
-                break;
-            case 1: // Round live
-                gameState.Round.Phase = RoundPhase.Live;
-                // Simulate player actions
-                SimulatePlayerActions(gameState);
-                break;
-            case 2: // Bomb planted
-                gameState.Round.Phase = RoundPhase.Live;
-                gameState.Bomb.State = BombState.Planted;
-                break;
-            case 3: // Bomb defused
-                gameState.Round.Phase = RoundPhase.Live;
-                gameState.Bomb.State = BombState.Defused;
-                break;
-            case 4: // Round end
-                gameState.Round.Phase = RoundPhase.Over;
-                break;
-        }
-
-        _trackerService.UpdateGameState(gameState);
-
-        // Auto-advance simulation
         if (_autoSimulationEnabled)
         {
-            _simulationStep = (_simulationStep + 1) % 5;
+            Console.WriteLine("🔄 Auto-simulation enabled - will progress through rounds automatically");
+        }
+        else
+        {
+            Console.WriteLine("⏸️ Auto-simulation disabled");
         }
     }
 
-    private void SimulatePlayerActions(GameState gameState)
+    private void SimulateGameProgression()
     {
-        if (gameState.Player != null)
+        if (!_gameInProgress) return;
+
+        switch (_roundPhase)
         {
-            // Simulate health changes
-            if (_random.Next(100) < 30) // 30% chance to take damage
-            {
-                gameState.Player.State.Health = Math.Max(0, gameState.Player.State.Health - _random.Next(10, 50));
-            }
+            case 0: // Freeze time
+                _roundTimer++;
+                if (_roundTimer >= 3) // 3 seconds freeze time
+                {
+                    _roundPhase = 1; // Live
+                    _roundTimer = 0;
+                    Console.WriteLine($"🎯 Round {_currentRound} is now LIVE!");
 
-            // Simulate money changes
-            if (_random.Next(100) < 20) // 20% chance to get money
-            {
-                gameState.Player.State.Money += _random.Next(100, 500);
-            }
+                    var liveGameState = CreateTestGameState();
+                    liveGameState.Round.Phase = CSGSI.Nodes.RoundPhase.Live;
+                    _trackerService.UpdateGameState(liveGameState);
+                }
+                break;
 
-            // Simulate kills/deaths
-            if (_random.Next(100) < 10) // 10% chance to get a kill
-            {
-                gameState.Player.MatchStats.Kills++;
-                gameState.Player.MatchStats.Score += 100;
-            }
+            case 1: // Live
+                _roundTimer++;
+                if (_roundTimer >= 10) // 10 seconds live
+                {
+                    // Randomly determine round outcome
+                    if (_random.Next(3) == 0)
+                    {
+                        SimulateBombPlanted();
+                        // Wait a bit then explode/defuse
+                        Task.Delay(2000).ContinueWith(_ =>
+                        {
+                            if (_random.Next(2) == 0)
+                                SimulateBombExploded();
+                            else
+                                SimulateBombDefused();
+                        });
+                    }
+                    else
+                    {
+                        SimulateRoundEnd();
+                    }
+                }
+                break;
 
-            if (_random.Next(100) < 5) // 5% chance to die
-            {
-                gameState.Player.State.Health = 0;
-                gameState.Player.MatchStats.Deaths++;
-            }
+            case 2: // Round over
+                _roundTimer++;
+                if (_roundTimer >= 3) // 3 seconds between rounds
+                {
+                    if (_currentRound < _maxRounds)
+                    {
+                        SimulateNextRound();
+                    }
+                    else
+                    {
+                        _gameInProgress = false;
+                        Console.WriteLine("🏁 Game completed! All rounds played.");
+                    }
+                }
+                break;
         }
     }
 
     private GameState CreateTestGameState()
     {
-        // Create a minimal test game state using JSON string
-        var jsonData = CreateTestGameStateJson();
-        var gameState = new GameState(jsonData);
-
-        return gameState;
+        var json = CreateTestGameStateJson();
+        return new GameState(json);
     }
 
     private string CreateTestGameStateJson()
     {
-        var mapName = GetRandomMap();
-        var weaponName = GetRandomWeapon();
-        var health = _random.Next(0, 101);
-        var armor = _random.Next(0, 101);
-        var money = _random.Next(0, 16001);
-        var kills = _random.Next(0, 30);
-        var deaths = _random.Next(0, 20);
-        var assists = _random.Next(0, 15);
-        var mvps = _random.Next(0, 10);
-        var score = kills * 100 + assists * 50;
-        var teamTScore = _random.Next(0, 16);
-        var teamCTScore = _random.Next(0, 16);
-        var roundPhase = GetRoundPhaseString(_simulationStep);
-        var bombState = GetBombStateString(_simulationStep);
-        var playerTeam = _random.Next(2) == 0 ? "T" : "CT";
+        var roundPhase = _roundPhase switch
+        {
+            0 => "freezetime",
+            1 => "live",
+            2 => "over",
+            _ => "freezetime"
+        };
+
+        var bombState = _roundPhase == 1 && _roundTimer > 5 ? "planted" : "carried";
 
         return $@"{{
             ""map"": {{
-                ""name"": ""{mapName}"",
-                ""mode"": ""Competitive"",
+                ""name"": ""{GetRandomMap()}"",
+                ""mode"": ""competitive"",
                 ""team_t"": {{
-                    ""score"": {teamTScore}
+                    ""score"": {_scoreT}
                 }},
                 ""team_ct"": {{
-                    ""score"": {teamCTScore}
+                    ""score"": {_scoreCT}
                 }}
             }},
             ""round"": {{
-                ""phase"": ""{roundPhase}""
+                ""phase"": ""{roundPhase}"",
+                ""score_t"": {_scoreT},
+                ""score_ct"": {_scoreCT}
             }},
             ""player"": {{
+                ""steamid"": ""76561198012345678"",
+                ""name"": ""FragifyPlayer"",
+                ""team"": ""{(_random.Next(2) == 0 ? "T" : "CT")}"",
                 ""state"": {{
-                    ""health"": {health},
-                    ""armor"": {armor},
-                    ""money"": {money}
+                    ""health"": {_random.Next(1, 101)},
+                    ""armor"": {_random.Next(0, 101)},
+                    ""money"": {_random.Next(800, 16001)},
+                    ""round_kills"": {_random.Next(0, 6)},
+                    ""round_totaldmg"": {_random.Next(0, 500)}
                 }},
                 ""match_stats"": {{
-                    ""kills"": {kills},
-                    ""deaths"": {deaths},
-                    ""assists"": {assists},
-                    ""mvps"": {mvps},
-                    ""score"": {score}
+                    ""kills"": {_random.Next(0, 31)},
+                    ""assists"": {_random.Next(0, 21)},
+                    ""deaths"": {_random.Next(0, 31)},
+                    ""mvps"": {_random.Next(0, 11)},
+                    ""score"": {_random.Next(0, 1001)}
                 }},
-                ""team"": ""{playerTeam}"",
                 ""weapons"": {{
                     ""active_weapon"": {{
-                        ""name"": ""{weaponName}""
+                        ""name"": ""{GetRandomWeapon()}"",
+                        ""paintkit"": ""default"",
+                        ""type"": ""rifle"",
+                        ""state"": ""active""
                     }}
                 }}
             }},
             ""bomb"": {{
-                ""state"": ""{bombState}""
+                ""state"": ""{bombState}"",
+                ""countdown"": ""0.0""
+            }},
+            ""grenades"": {{
+                ""hegrenade"": {{
+                    ""owner"": ""76561198012345678"",
+                    ""position"": ""0.0, 0.0, 0.0"",
+                    ""velocity"": ""0.0, 0.0, 0.0"",
+                    ""lifetime"": ""0.0"",
+                    ""type"": ""weapon_hegrenade""
+                }}
+            }},
+            ""phase_countdowns"": {{
+                ""phase_ends_in"": ""{(_roundPhase == 0 ? 3 - _roundTimer : _roundPhase == 1 ? 10 - _roundTimer : 0)}""
             }}
         }}";
-    }
-
-    private string GetRoundPhaseString(int step)
-    {
-        return step switch
-        {
-            0 => "FreezeTime",
-            1 => "Live",
-            2 => "Live",
-            3 => "Live",
-            4 => "Over",
-            _ => "Live"
-        };
-    }
-
-    private string GetBombStateString(int step)
-    {
-        return step switch
-        {
-            2 => "Planted",
-            3 => "Defused",
-            _ => "Carried"
-        };
     }
 
     private string GetRandomMap()
@@ -269,10 +396,29 @@ public class TestDataGenerator
 
     private string GetRandomWeapon()
     {
-        var weapons = new[] {
-            "weapon_ak47", "weapon_m4a1", "weapon_awp", "weapon_deagle", "weapon_usp_silencer",
-            "weapon_glock", "weapon_p250", "weapon_famas", "weapon_galilar", "weapon_knife"
-        };
+        var weapons = new[] { "weapon_ak47", "weapon_m4a1", "weapon_awp", "weapon_deagle", "weapon_usp_silencer", "weapon_glock" };
         return weapons[_random.Next(weapons.Length)];
+    }
+
+    public void ResetGame()
+    {
+        _gameInProgress = false;
+        _currentRound = 0;
+        _roundPhase = 0;
+        _roundTimer = 0;
+        _scoreT = 0;
+        _scoreCT = 0;
+        _trackerService.ResetSession();
+        Console.WriteLine("🔄 Game reset - ready for new session");
+    }
+
+    public void ShowGameStatus()
+    {
+        Console.WriteLine($"🎮 Game Status:");
+        Console.WriteLine($"   Round: {_currentRound}/{_maxRounds}");
+        Console.WriteLine($"   Phase: {(_roundPhase switch { 0 => "Freeze Time", 1 => "Live", 2 => "Round Over", _ => "Unknown" })}");
+        Console.WriteLine($"   Score: T {_scoreT} - CT {_scoreCT}");
+        Console.WriteLine($"   Timer: {_roundTimer}s");
+        Console.WriteLine($"   Auto-sim: {(_autoSimulationEnabled ? "ON" : "OFF")}");
     }
 }

@@ -1,184 +1,446 @@
+using FragifyTracker.Models;
 using CSGSI;
 using CSGSI.Nodes;
-using FragifyTracker.Models;
 
 namespace FragifyTracker.Services;
 
 public class GameTrackerService
 {
     private GameStats _currentStats;
-    private GameState? _previousGameState;
-    private DateTime _sessionStartTime;
-    private int _totalRounds;
-    private int _roundsWon;
-    private int _roundsLost;
+    private readonly SessionDataManager _sessionManager;
+    private readonly GameSessionService _gameSessionService;
+    private readonly MapThemeService _mapThemeService;
+    private readonly WeaponImageService _weaponImageService;
+    private readonly PlayerConfigService _playerConfigService;
+    private string? _mainPlayerSteamId;
+    private GameStateInfo _gameStateInfo;
 
-    public GameTrackerService()
+            public GameTrackerService()
     {
         _currentStats = new GameStats();
-        _sessionStartTime = DateTime.Now;
-        _totalRounds = 0;
-        _roundsWon = 0;
-        _roundsLost = 0;
+        _sessionManager = new SessionDataManager();
+        _playerConfigService = new PlayerConfigService();
+        _gameSessionService = new GameSessionService(_playerConfigService);
+        _mapThemeService = new MapThemeService();
+        _weaponImageService = new WeaponImageService();
+        _gameStateInfo = new GameStateInfo();
+
+        _sessionManager.StartNewSession();
+
+        // Set initial connection status for test mode
+        SetInitialConnectionStatus();
+    }
+
+    private void SetInitialConnectionStatus()
+    {
+        _currentStats.IsConnected = true;
+        _currentStats.ConnectionStatus = "Connected - Test Mode";
+        _currentStats.MessagesReceived = 0;
+        _currentStats.LastMessageTime = DateTime.Now;
+        _currentStats.LastMessageContent = "Test mode initialized - waiting for events";
     }
 
     public void UpdateGameState(GameState gameState)
     {
-        if (gameState == null) return;
-
-        // Update debug information
-        _currentStats.MessagesReceived++;
-        _currentStats.LastMessageTime = DateTime.Now;
-        _currentStats.IsConnected = true;
-        _currentStats.ConnectionStatus = "Connected - Receiving data";
-
-        // Store a summary of the last message for debugging
-        _currentStats.LastMessageContent = $"Map: {gameState.Map.Name}, Phase: {gameState.Round.Phase}, Player Health: {gameState.Player?.State.Health ?? 0}";
-
-        // Update basic game info
-        _currentStats.MapName = gameState.Map.Name;
-        _currentStats.GameMode = gameState.Map.Mode.ToString();
-        _currentStats.RoundPhase = gameState.Round.Phase.ToString();
-        _currentStats.RoundNumber = 0; // CSGSI doesn't provide round number
-        _currentStats.ScoreT = gameState.Map.TeamT.Score;
-        _currentStats.ScoreCT = gameState.Map.TeamCT.Score;
-
-        // Update player stats if available
-        if (gameState.Player != null)
+        try
         {
-            UpdatePlayerStats(gameState.Player);
+            _currentStats.MapName = gameState.Map.Name;
+            _currentStats.GameMode = gameState.Map.Mode.ToString();
+            _currentStats.RoundPhase = gameState.Round.Phase.ToString();
+            _currentStats.BombState = gameState.Bomb.State.ToString();
+            _currentStats.RoundNumber = 0; // CSGSI doesn't provide this directly
+            _currentStats.RoundTime = 0; // CSGSI doesn't provide this directly
+
+                        if (gameState.Player != null)
+            {
+                // Track the main player's Steam ID for persistent identification
+                if (string.IsNullOrEmpty(_mainPlayerSteamId))
+                {
+                    _mainPlayerSteamId = gameState.Player.SteamID;
+                    Console.WriteLine($"🎯 Main player identified: {_mainPlayerSteamId}");
+
+                    // Start new game session if this is the first time we see this player
+                    if (!string.IsNullOrEmpty(_currentStats.MapName) && !string.IsNullOrEmpty(_currentStats.PlayerTeam))
+                    {
+                        _gameSessionService.StartNewSession(_currentStats.MapName, _currentStats.PlayerTeam, _mainPlayerSteamId);
+                    }
+                }
+
+                _currentStats.PlayerSteamId = gameState.Player.SteamID;
+                _currentStats.PlayerHealth = gameState.Player.State.Health;
+                _currentStats.PlayerArmor = gameState.Player.State.Armor;
+                _currentStats.PlayerMoney = gameState.Player.State.Money;
+                _currentStats.PlayerKills = gameState.Player.MatchStats.Kills;
+                _currentStats.PlayerDeaths = gameState.Player.MatchStats.Deaths;
+                _currentStats.PlayerAssists = gameState.Player.MatchStats.Assists;
+                _currentStats.PlayerMVPs = gameState.Player.MatchStats.MVPs;
+                _currentStats.PlayerScore = gameState.Player.MatchStats.Score;
+                _currentStats.PlayerTeam = gameState.Player.Team.ToString();
+                _currentStats.ActiveWeapon = gameState.Player.Weapons?.ActiveWeapon?.Name ?? "Unknown";
+
+                // Update game session stats
+                _gameSessionService.UpdatePlayerStats(
+                    _mainPlayerSteamId,
+                    _currentStats.PlayerKills,
+                    _currentStats.PlayerDeaths,
+                    _currentStats.PlayerAssists,
+                    _currentStats.PlayerMoney,
+                    _currentStats.PlayerScore,
+                    _currentStats.PlayerMVPs
+                );
+            }
+
+            if (gameState.Round != null)
+            {
+                // CSGSI provides team scores in the Map node, not Round node
+                _currentStats.ScoreT = gameState.Map.TeamT.Score;
+                _currentStats.ScoreCT = gameState.Map.TeamCT.Score;
+            }
+
+            _currentStats.MessagesReceived++;
+            _currentStats.LastMessageTime = DateTime.Now;
+            _currentStats.LastMessageContent = $"Map: {_currentStats.MapName}, Phase: {_currentStats.RoundPhase}, Player Health: {_currentStats.PlayerHealth}";
+            _currentStats.IsConnected = true;
+            _currentStats.ConnectionStatus = "Connected - Receiving data";
+
+            // Update session data
+            UpdateSessionData(gameState);
+
+            // Check for round phase changes
+            CheckForRoundPhaseChanges(gameState);
         }
-
-        // Update bomb state
-        _currentStats.BombState = gameState.Bomb.State.ToString();
-
-        // Update round timer - CSGSI doesn't provide round time
-        _currentStats.RoundTime = 0;
-
-        // Check for round phase changes
-        if (_previousGameState != null)
+        catch (Exception ex)
         {
-            CheckForRoundPhaseChanges(_previousGameState, gameState);
+            Console.WriteLine($"Error updating game state: {ex.Message}");
         }
-
-        _previousGameState = gameState;
     }
 
-    public void OnConnectionLost()
+    private void UpdateSessionData(GameState gameState)
     {
-        _currentStats.IsConnected = false;
-        _currentStats.ConnectionStatus = "Connection lost - Waiting for reconnection...";
-    }
-
-    public void OnConnectionEstablished()
-    {
-        _currentStats.IsConnected = true;
-        _currentStats.ConnectionStatus = "Connected - Waiting for game data...";
-    }
-
-    private void UpdatePlayerStats(PlayerNode player)
-    {
-        _currentStats.PlayerHealth = player.State.Health;
-        _currentStats.PlayerArmor = player.State.Armor;
-        _currentStats.PlayerMoney = player.State.Money;
-        _currentStats.PlayerKills = player.MatchStats.Kills;
-        _currentStats.PlayerDeaths = player.MatchStats.Deaths;
-        _currentStats.PlayerAssists = player.MatchStats.Assists;
-        _currentStats.PlayerMVPs = player.MatchStats.MVPs;
-        _currentStats.PlayerScore = player.MatchStats.Score;
-
-        // Update active weapon
-        if (player.Weapons?.ActiveWeapon != null)
+        try
         {
-            _currentStats.ActiveWeapon = player.Weapons.ActiveWeapon.Name;
-        }
+            // Update current round info
+            _sessionManager.UpdateCurrentRound(
+                _currentStats.RoundNumber,
+                _currentStats.RoundPhase,
+                _currentStats.RoundTime
+            );
 
-        // Update team
-        _currentStats.PlayerTeam = player.Team.ToString();
+            // Update main player stats using their Steam ID for persistent tracking
+            var playerId = _mainPlayerSteamId ?? "unknown_player";
+            var playerName = gameState.Player?.Name ?? "FragifyPlayer";
+            var playerTeam = _currentStats.PlayerTeam ?? "Unknown";
+
+            _sessionManager.UpdatePlayerStats(
+                playerId,
+                playerName,
+                playerTeam,
+                _currentStats
+            );
+
+            // Update session metadata
+            var session = _sessionManager.GetCurrentSession();
+            session.MapName = _currentStats.MapName;
+            session.GameMode = _currentStats.GameMode;
+        }
+        catch (Exception ex)
+        {
+            Console.WriteLine($"Error updating session data: {ex.Message}");
+        }
     }
 
-    private void CheckForRoundPhaseChanges(GameState previous, GameState current)
+    private void CheckForRoundPhaseChanges(GameState gameState)
     {
-        // Check if round just started
-        if (previous.Round.Phase == RoundPhase.FreezeTime &&
-            current.Round.Phase == RoundPhase.Live)
+        var currentPhase = gameState.Round.Phase.ToString();
+        var currentBombState = gameState.Bomb.State.ToString();
+
+        // Update game state info for visual effects
+        UpdateGameStateInfo(currentPhase, currentBombState);
+
+        if (currentPhase == "Live" && _currentStats.RoundPhase != "Live")
         {
             OnRoundBegin();
         }
-
-        // Check if round ended
-        if (previous.Round.Phase == RoundPhase.Live &&
-            current.Round.Phase == RoundPhase.Over)
+        else if (currentPhase == "Over" && _currentStats.RoundPhase != "Over")
         {
             OnRoundEnd();
+        }
+
+        // Check bomb state changes
+        if (currentBombState == "Planted" && _currentStats.BombState != "Planted")
+        {
+            OnBombPlanted();
+        }
+        else if (currentBombState == "Defused" && _currentStats.BombState != "Defused")
+        {
+            OnBombDefused();
+        }
+        else if (currentBombState == "Exploded" && _currentStats.BombState != "Exploded")
+        {
+            OnBombExploded();
+        }
+    }
+
+    private void UpdateGameStateInfo(string phase, string bombState)
+    {
+        _gameStateInfo.CurrentPhase = phase;
+        _gameStateInfo.BombState = bombState;
+
+        // Update visual effects based on game state
+        switch (phase)
+        {
+            case "Freezetime":
+                _gameStateInfo.BorderColor = "#87CEEB"; // Icey blue
+                _gameStateInfo.BorderEffect = "Glow";
+                break;
+            case "Live":
+                _gameStateInfo.BorderColor = "#4A90E2"; // Normal blue
+                _gameStateInfo.BorderEffect = "None";
+                break;
+            case "Over":
+                // Border color will be set by round result
+                break;
+        }
+
+        switch (bombState)
+        {
+            case "Planted":
+                _gameStateInfo.ShowBombIcon = true;
+                _gameStateInfo.ShowBombTimer = true;
+                _gameStateInfo.BombIconColor = "#FF0000";
+                _gameStateInfo.BombPlantedTime = DateTime.Now;
+                break;
+            case "Defused":
+                _gameStateInfo.ShowBombIcon = false;
+                _gameStateInfo.ShowBombTimer = false;
+                _gameStateInfo.BorderColor = "#00FF00"; // Green for defused
+                _gameStateInfo.BorderEffect = "Pulse";
+                break;
+            case "Exploded":
+                _gameStateInfo.ShowBombIcon = false;
+                _gameStateInfo.ShowBombTimer = false;
+                _gameStateInfo.BorderColor = "#FF4500"; // Fiery orange-red
+                _gameStateInfo.BorderEffect = "Fire";
+                break;
+            default:
+                _gameStateInfo.ShowBombIcon = false;
+                _gameStateInfo.ShowBombTimer = false;
+                break;
+        }
+
+        // Update bomb timer if planted
+        if (_gameStateInfo.ShowBombTimer && _gameStateInfo.BombPlantedTime.HasValue)
+        {
+            var timeSincePlanted = DateTime.Now - _gameStateInfo.BombPlantedTime.Value;
+            _gameStateInfo.BombTimeRemaining = Math.Max(0, 40 - (int)timeSincePlanted.TotalSeconds);
         }
     }
 
     public void OnRoundBegin()
     {
-        _totalRounds++;
-        _currentStats.RoundStartTime = DateTime.Now;
+        _currentStats.TotalRounds++;
+        _currentStats.RoundTime = 0;
+
+        var roundData = new RoundData
+        {
+            RoundNumber = _currentStats.TotalRounds,
+            Phase = "Live",
+            StartTime = DateTime.Now
+        };
+
+        _sessionManager.AddRoundData(roundData);
+
+        var gameEvent = new GameEvent
+        {
+            EventType = "RoundBegin",
+            PlayerId = _mainPlayerSteamId ?? "unknown_player",
+            PlayerName = "FragifyPlayer",
+            Description = $"Round {_currentStats.TotalRounds} started",
+            Timestamp = DateTime.Now,
+            RoundNumber = _currentStats.TotalRounds
+        };
+
+        _sessionManager.AddGameEvent(gameEvent);
+        _gameSessionService.AddGameEvent(gameEvent);
     }
 
     public void OnRoundEnd()
     {
-        // Determine round winner based on score changes
-        if (_previousGameState != null)
+        var roundData = _sessionManager.GetCurrentSession().Rounds.LastOrDefault();
+        if (roundData != null)
         {
-            var scoreDiffT = _currentStats.ScoreT - _previousGameState.Map.TeamT.Score;
-            var scoreDiffCT = _currentStats.ScoreCT - _previousGameState.Map.TeamCT.Score;
+            roundData.EndTime = DateTime.Now;
+            roundData.Phase = "Over";
 
-            if (scoreDiffT > 0)
+            // Determine winner based on current score
+            if (_currentStats.ScoreT > _currentStats.ScoreCT)
             {
-                _roundsWon = _currentStats.PlayerTeam == "T" ? _roundsWon + 1 : _roundsWon;
-                _roundsLost = _currentStats.PlayerTeam == "CT" ? _roundsLost + 1 : _roundsLost;
+                roundData.Winner = "T";
+                _currentStats.RoundsWon++;
             }
-            else if (scoreDiffCT > 0)
+            else if (_currentStats.ScoreCT > _currentStats.ScoreT)
             {
-                _roundsWon = _currentStats.PlayerTeam == "CT" ? _roundsWon + 1 : _roundsWon;
-                _roundsLost = _currentStats.PlayerTeam == "T" ? _roundsLost + 1 : _roundsLost;
+                roundData.Winner = "CT";
+                _currentStats.RoundsLost++;
             }
+        }
+
+        // Update visual effects based on round result
+        if (roundData?.Winner == _currentStats.PlayerTeam)
+        {
+            _gameStateInfo.IsRoundWon = true;
+            _gameStateInfo.IsRoundLost = false;
+            _gameStateInfo.RoundResult = "Won";
+            _gameStateInfo.BorderColor = "#00FF00"; // Green for won
+            _gameStateInfo.BorderEffect = "Pulse";
+        }
+        else if (!string.IsNullOrEmpty(roundData?.Winner))
+        {
+            _gameStateInfo.IsRoundWon = false;
+            _gameStateInfo.IsRoundLost = true;
+            _gameStateInfo.RoundResult = "Lost";
+            _gameStateInfo.BorderColor = "#FF0000"; // Red for lost
+            _gameStateInfo.BorderEffect = "Shake";
+        }
+
+        var gameEvent = new GameEvent
+        {
+            EventType = "RoundEnd",
+            PlayerId = _mainPlayerSteamId ?? "unknown_player",
+            PlayerName = "FragifyPlayer",
+            Description = $"Round {_currentStats.TotalRounds} ended - Winner: {roundData?.Winner ?? "Unknown"}",
+            Timestamp = DateTime.Now,
+            RoundNumber = _currentStats.TotalRounds
+        };
+
+        _sessionManager.AddGameEvent(gameEvent);
+
+        // Also add to game session
+        if (roundData != null)
+        {
+            _gameSessionService.AddRoundData(roundData);
         }
     }
 
     public void OnBombPlanted()
     {
-        _currentStats.BombPlantedTime = DateTime.Now;
+        var gameEvent = new GameEvent
+        {
+            EventType = "BombPlanted",
+            PlayerId = _mainPlayerSteamId ?? "unknown_player",
+            PlayerName = "FragifyPlayer",
+            Description = "Bomb planted",
+            Timestamp = DateTime.Now,
+            RoundNumber = _currentStats.TotalRounds
+        };
+
+        _sessionManager.AddGameEvent(gameEvent);
+        _gameSessionService.AddGameEvent(gameEvent);
     }
 
     public void OnBombDefused()
     {
-        _currentStats.BombDefusedTime = DateTime.Now;
+        var gameEvent = new GameEvent
+        {
+            EventType = "BombDefused",
+            PlayerId = _mainPlayerSteamId ?? "unknown_player",
+            PlayerName = "FragifyPlayer",
+            Description = "Bomb defused",
+            Timestamp = DateTime.Now,
+            RoundNumber = _currentStats.TotalRounds
+        };
+
+        _sessionManager.AddGameEvent(gameEvent);
+        _gameSessionService.AddGameEvent(gameEvent);
     }
 
     public void OnBombExploded()
     {
-        _currentStats.BombExplodedTime = DateTime.Now;
+        var gameEvent = new GameEvent
+        {
+            EventType = "BombExploded",
+            PlayerId = _mainPlayerSteamId ?? "unknown_player",
+            PlayerName = "FragifyPlayer",
+            Description = "Bomb exploded",
+            Timestamp = DateTime.Now,
+            RoundNumber = _currentStats.TotalRounds
+        };
+
+        _sessionManager.AddGameEvent(gameEvent);
+        _gameSessionService.AddGameEvent(gameEvent);
     }
 
-    public void OnPlayerFlashed(int flashDuration)
+    public void OnConnectionEstablished()
     {
-        _currentStats.LastFlashDuration = flashDuration;
-        _currentStats.LastFlashTime = DateTime.Now;
+        _currentStats.IsConnected = true;
+        _currentStats.ConnectionStatus = "Connected - Receiving data";
+    }
+
+    public void OnConnectionLost()
+    {
+        _currentStats.IsConnected = false;
+        _currentStats.ConnectionStatus = "Disconnected - No recent messages";
     }
 
     public GameStats GetCurrentStats()
     {
-        _currentStats.SessionDuration = DateTime.Now - _sessionStartTime;
-        _currentStats.TotalRounds = _totalRounds;
-        _currentStats.RoundsWon = _roundsWon;
-        _currentStats.RoundsLost = _roundsLost;
-        _currentStats.WinRate = _totalRounds > 0 ? (double)_roundsWon / _totalRounds * 100 : 0;
+        return _currentStats.Clone();
+    }
 
-        return _currentStats;
+    public SessionData GetCurrentSession()
+    {
+        return _sessionManager.GetCurrentSession();
+    }
+
+    public List<PlayerSessionData> GetAllPlayers()
+    {
+        return _sessionManager.GetAllPlayers();
+    }
+
+    public List<RoundData> GetAllRounds()
+    {
+        return _sessionManager.GetAllRounds();
+    }
+
+    public string? GetMainPlayerSteamId()
+    {
+        return _mainPlayerSteamId;
+    }
+
+    public MapInfo? GetCurrentMapTheme()
+    {
+        return _mapThemeService.GetMapTheme(_currentStats.MapName);
+    }
+
+    public string GetWeaponImageUrl(string weaponName)
+    {
+        return _weaponImageService.GetWeaponImageUrl(weaponName);
+    }
+
+    public string GetAgentImageUrl(string team)
+    {
+        return _weaponImageService.GetAgentImageUrl(team);
+    }
+
+    public GameStateInfo GetGameStateInfo()
+    {
+        return _gameStateInfo;
+    }
+
+    public GameSession? GetCurrentGameSession()
+    {
+        return _gameSessionService.GetCurrentSession();
+    }
+
+    public List<GameSession> GetAllGameSessions()
+    {
+        return _gameSessionService.GetAllSessions();
     }
 
     public void ResetSession()
     {
         _currentStats = new GameStats();
-        _sessionStartTime = DateTime.Now;
-        _totalRounds = 0;
-        _roundsWon = 0;
-        _roundsLost = 0;
+        _sessionManager.StartNewSession();
+        SetInitialConnectionStatus();
     }
 }

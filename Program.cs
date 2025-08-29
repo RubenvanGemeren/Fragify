@@ -62,7 +62,15 @@ class Program
             if (_testMode)
             {
                 AnsiConsole.MarkupLine("[bold yellow]🧪 Test Mode Enabled[/]");
-                AnsiConsole.MarkupLine("[dim]Use keys 1-6, r for test events[/]");
+                AnsiConsole.MarkupLine("[dim]Test Commands:[/]");
+                AnsiConsole.MarkupLine("[dim]  1 - Start Round    2 - Plant Bomb    3 - Defuse Bomb[/]");
+                AnsiConsole.MarkupLine("[dim]  4 - End Round      5 - Flash Player  6 - Toggle Auto[/]");
+                AnsiConsole.MarkupLine("[dim]  7 - Full Game      8 - Next Round    9 - Game Status[/]");
+                AnsiConsole.MarkupLine("[dim]  0 - Reset Game     r - Reset Session[/]");
+
+                // Generate initial test data to show something in the UI
+                AnsiConsole.MarkupLine("[dim]Generating initial test data...[/]");
+                _testDataGenerator?.GenerateInitialData(); // This will create initial stats
             }
 
             // Run the main loop
@@ -206,6 +214,21 @@ class Program
                 case '6':
                     _testDataGenerator?.ToggleAutoSimulation();
                     AnsiConsole.MarkupLine($"[bold cyan]🔄 Test: Auto-simulation {(_testDataGenerator?.IsAutoSimulationEnabled ?? false ? "enabled" : "disabled")}[/]");
+                    break;
+                case '7':
+                    _testDataGenerator?.SimulateFullGame();
+                    AnsiConsole.MarkupLine("[bold magenta]🎮 Test: Full Game Simulation Started![/]");
+                    break;
+                case '8':
+                    _testDataGenerator?.SimulateNextRound();
+                    AnsiConsole.MarkupLine("[bold blue]⏭️ Test: Next Round![/]");
+                    break;
+                case '9':
+                    _testDataGenerator?.ShowGameStatus();
+                    break;
+                case '0':
+                    _testDataGenerator?.ResetGame();
+                    AnsiConsole.MarkupLine("[bold red]🔄 Test: Game Reset![/]");
                     break;
                 case 'r':
                     _trackerService?.ResetSession();

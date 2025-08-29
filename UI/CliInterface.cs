@@ -286,18 +286,18 @@ public class CliInterface : IUserInterface
         _gameInfoTable.UpdateCell(0, 1, stats.MapName ?? "Unknown");
         _gameInfoTable.UpdateCell(1, 1, stats.GameMode ?? "Unknown");
         _gameInfoTable.UpdateCell(2, 1, stats.RoundNumber.ToString());
-        _gameInfoTable.UpdateCell(3, 1, GetPhaseColor(stats.RoundPhase).ToString());
-        _gameInfoTable.UpdateCell(4, 1, $"[bold]{stats.GetScoreDisplay()}[/]");
+        _gameInfoTable.UpdateCell(3, 1, GetPhaseText(stats.RoundPhase ?? ""));
+        _gameInfoTable.UpdateCell(4, 1, stats.GetScoreDisplay());
 
         // Update Player Stats Table
-        _playerStatsTable.UpdateCell(0, 1, $"[green]{stats.PlayerKills}[/]");
-        _playerStatsTable.UpdateCell(1, 1, $"[red]{stats.PlayerDeaths}[/]");
-        _playerStatsTable.UpdateCell(2, 1, $"[blue]{stats.PlayerAssists}[/]");
-        _playerStatsTable.UpdateCell(3, 1, $"[yellow]{stats.PlayerMVPs}[/]");
-        _playerStatsTable.UpdateCell(4, 1, $"[bold]{stats.PlayerScore}[/]");
+        _playerStatsTable.UpdateCell(0, 1, stats.PlayerKills.ToString());
+        _playerStatsTable.UpdateCell(1, 1, stats.PlayerDeaths.ToString());
+        _playerStatsTable.UpdateCell(2, 1, stats.PlayerAssists.ToString());
+        _playerStatsTable.UpdateCell(3, 1, stats.PlayerMVPs.ToString());
+        _playerStatsTable.UpdateCell(4, 1, stats.PlayerScore.ToString());
         _playerStatsTable.UpdateCell(5, 1, $"${stats.PlayerMoney:N0}");
         _playerStatsTable.UpdateCell(6, 1, stats.ActiveWeapon ?? "Unknown");
-        _playerStatsTable.UpdateCell(7, 1, GetTeamColor(stats.PlayerTeam).ToString());
+        _playerStatsTable.UpdateCell(7, 1, GetTeamText(stats.PlayerTeam ?? ""));
 
         // Update Session Stats Table
         _sessionStatsTable.UpdateCell(0, 1, stats.GetSessionDurationDisplay());
@@ -307,7 +307,7 @@ public class CliInterface : IUserInterface
         _sessionStatsTable.UpdateCell(4, 1, $"[bold]{stats.WinRate:F1}%[/]");
 
         // Update Debug Info Table
-        _debugInfoTable.UpdateCell(0, 1, stats.LastMessageContent.Length > 50 ? stats.LastMessageContent.Substring(0, 50) + "..." : stats.LastMessageContent);
+        _debugInfoTable.UpdateCell(0, 1, (stats.LastMessageContent?.Length > 50 ? stats.LastMessageContent.Substring(0, 50) + "..." : stats.LastMessageContent) ?? "No message");
         _debugInfoTable.UpdateCell(1, 1, stats.IsConnected ? "[green]Connected[/]" : "[red]Disconnected[/]");
         _debugInfoTable.UpdateCell(2, 1, stats.MessagesReceived.ToString());
         _debugInfoTable.UpdateCell(3, 1, stats.LastMessageTime?.ToString("HH:mm:ss") ?? "Never");
@@ -364,6 +364,32 @@ public class CliInterface : IUserInterface
             "t" => new Markup("[bold red]Terrorist[/]"),
             "ct" => new Markup("[bold blue]Counter-Terrorist[/]"),
             _ => new Markup($"[dim]{team}[/]")
+        };
+    }
+
+    private string GetPhaseText(string phase)
+    {
+        if (string.IsNullOrEmpty(phase)) return "Unknown";
+
+        return phase.ToLower() switch
+        {
+            "live" => "Live",
+            "freezetime" => "Freeze Time",
+            "over" => "Round Over",
+            "warmup" => "Warmup",
+            _ => phase
+        };
+    }
+
+    private string GetTeamText(string team)
+    {
+        if (string.IsNullOrEmpty(team)) return "Unknown";
+
+        return team.ToLower() switch
+        {
+            "t" => "Terrorist",
+            "ct" => "Counter-Terrorist",
+            _ => team
         };
     }
 }

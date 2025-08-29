@@ -1,4 +1,5 @@
 using FragifyTracker.Models;
+using FragifyTracker.Services;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using System.Text.Json;
@@ -11,10 +12,12 @@ public class WebInterface : IUserInterface
     private GameStats? _lastStats;
     public bool IsRunning { get; private set; } = false;
     private readonly int _port;
+    private readonly WebMapThemeService _mapThemeService;
 
     public WebInterface(int port = 5000)
     {
         _port = port;
+        _mapThemeService = new WebMapThemeService();
     }
 
     public void Initialize()
@@ -71,6 +74,43 @@ public class WebInterface : IUserInterface
             });
         });
 
+        // API endpoint for getting session data
+        _app.MapGet("/api/session", () =>
+        {
+            var session = _lastStats?.GetType().GetProperty("SessionData")?.GetValue(_lastStats);
+            if (session == null)
+                return Results.NotFound("No session data available");
+
+            return Results.Json(session, new JsonSerializerOptions
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            });
+        });
+
+        // API endpoint for getting all players
+        _app.MapGet("/api/players", () =>
+        {
+            // This would need to be implemented in the service layer
+            return Results.Json(new { message = "Player data endpoint - to be implemented" });
+        });
+
+        // API endpoint for getting round data
+        _app.MapGet("/api/rounds", () =>
+        {
+            // This would need to be implemented in the service layer
+            return Results.Json(new { message = "Round data endpoint - to be implemented" });
+        });
+
+        // API endpoint for getting current map theme
+        _app.MapGet("/api/theme", () =>
+        {
+            if (_lastStats?.MapName == null)
+                return Results.Json(_mapThemeService.GetDefaultTheme());
+
+            var theme = _mapThemeService.GetMapTheme(_lastStats.MapName);
+            return Results.Json(theme);
+        });
+
         // Main dashboard page
         _app.MapGet("/", async (HttpContext context) =>
         {
@@ -99,8 +139,8 @@ public class WebInterface : IUserInterface
 
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #1e3c72 0%, #2a5298 100%);
-            color: white;
+            background: var(--background-gradient, linear-gradient(135deg, #1e3c72 0%, #2a5298 100%));
+            color: var(--text-color, white);
             min-height: 100vh;
         }
 
@@ -113,13 +153,35 @@ public class WebInterface : IUserInterface
 
         .header h1 {
             font-size: 2.5rem;
-            color: #4ade80;
-            text-shadow: 0 0 20px rgba(74, 222, 128, 0.5);
+            color: var(--primary-color, #4ade80);
+            text-shadow: 0 0 20px var(--primary-color-shadow, rgba(74, 222, 128, 0.5));
         }
 
         .header p {
-            color: #cbd5e1;
+            color: var(--text-color, #cbd5e1);
             margin-top: 0.5rem;
+        }
+
+        .theme-info {
+            margin-top: 1rem;
+            padding: 0.5rem 1rem;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            display: inline-block;
+        }
+
+        .theme-name {
+            display: block;
+            font-weight: bold;
+            color: var(--primary-color, #4ade80);
+            font-size: 1.1rem;
+        }
+
+        .theme-description {
+            display: block;
+            color: var(--text-color, #cbd5e1);
+            font-size: 0.9rem;
+            margin-top: 0.25rem;
         }
 
         .dashboard {
@@ -132,11 +194,11 @@ public class WebInterface : IUserInterface
         }
 
         .card {
-            background: rgba(255, 255, 255, 0.1);
+            background: var(--card-background, rgba(255, 255, 255, 0.1));
             border-radius: 15px;
             padding: 1.5rem;
             backdrop-filter: blur(10px);
-            border: 1px solid rgba(255, 255, 255, 0.2);
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.2));
             transition: transform 0.3s ease, box-shadow 0.3s ease;
         }
 
@@ -146,10 +208,10 @@ public class WebInterface : IUserInterface
         }
 
         .card h2 {
-            color: #4ade80;
+            color: var(--primary-color, #4ade80);
             margin-bottom: 1rem;
             font-size: 1.5rem;
-            border-bottom: 2px solid #4ade80;
+            border-bottom: 2px solid var(--primary-color, #4ade80);
             padding-bottom: 0.5rem;
         }
 
@@ -168,12 +230,12 @@ public class WebInterface : IUserInterface
         }
 
         .stat-label {
-            color: #cbd5e1;
+            color: var(--text-color, #cbd5e1);
             font-weight: 500;
         }
 
         .stat-value {
-            color: #4ade80;
+            color: var(--primary-color, #4ade80);
             font-weight: bold;
         }
 
@@ -188,7 +250,7 @@ public class WebInterface : IUserInterface
 
         .progress-fill {
             height: 100%;
-            background: linear-gradient(90deg, #4ade80, #22c55e);
+            background: linear-gradient(90deg, var(--primary-color, #4ade80), var(--secondary-color, #22c55e));
             transition: width 0.3s ease;
         }
 
@@ -207,18 +269,18 @@ public class WebInterface : IUserInterface
         }
 
         .status-connected {
-            background: #4ade80;
-            box-shadow: 0 0 10px rgba(74, 222, 128, 0.5);
+            background: var(--success-color, #4ade80);
+            box-shadow: 0 0 10px var(--success-color-shadow, rgba(74, 222, 128, 0.5));
         }
 
         .status-disconnected {
-            background: #ef4444;
-            box-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
+            background: var(--danger-color, #ef4444);
+            box-shadow: 0 0 10px var(--danger-color-shadow, rgba(239, 68, 68, 0.5));
         }
 
         .refresh-info {
             text-align: center;
-            color: #cbd5e1;
+            color: var(--text-color, #cbd5e1);
             margin-top: 1rem;
             font-size: 0.9rem;
         }
@@ -239,6 +301,10 @@ public class WebInterface : IUserInterface
     <div class=""header"">
         <h1>🎯 Fragify</h1>
         <p>Counter-Strike: Global Offensive Web Dashboard</p>
+        <div class=""theme-info"">
+            <span class=""theme-name"" id=""theme-name"">Default Theme</span>
+            <span class=""theme-description"" id=""theme-description"">CS:GO Dashboard</span>
+        </div>
     </div>
 
     <div class=""dashboard"">
@@ -531,15 +597,66 @@ public class WebInterface : IUserInterface
                 if (response.ok) {
                     const stats = await response.json();
                     updateDashboard(stats);
+
+                    // Fetch and apply theme based on current map
+                    await fetchAndApplyTheme(stats.mapName);
                 }
             } catch (error) {
                 console.error('Failed to fetch stats:', error);
             }
         }
 
+        async function fetchAndApplyTheme(mapName) {
+            try {
+                const response = await fetch('/api/theme');
+                if (response.ok) {
+                    const theme = await response.json();
+                    applyTheme(theme);
+                }
+            } catch (error) {
+                console.error('Failed to fetch theme:', error);
+            }
+        }
+
+        function applyTheme(theme) {
+            // Update theme info display
+            document.getElementById('theme-name').textContent = theme.name;
+            document.getElementById('theme-description').textContent = theme.description;
+
+            // Apply CSS variables to root element
+            const root = document.documentElement;
+            root.style.setProperty('--primary-color', theme.primaryColor);
+            root.style.setProperty('--secondary-color', theme.secondaryColor);
+            root.style.setProperty('--background-gradient', theme.backgroundGradient);
+            root.style.setProperty('--card-background', theme.cardBackground);
+            root.style.setProperty('--card-border', theme.cardBorder);
+            root.style.setProperty('--text-color', theme.textColor);
+            root.style.setProperty('--accent-color', theme.accentColor);
+            root.style.setProperty('--danger-color', theme.dangerColor);
+            root.style.setProperty('--success-color', theme.successColor);
+            root.style.setProperty('--warning-color', theme.warningColor);
+
+            // Add shadow variants for better visual effects
+            root.style.setProperty('--primary-color-shadow', theme.primaryColor + '80');
+            root.style.setProperty('--success-color-shadow', theme.successColor + '80');
+            root.style.setProperty('--danger-color-shadow', theme.dangerColor + '80');
+
+            // Update chart colors if chart exists
+            if (roundsChart) {
+                roundsChart.data.datasets[0].borderColor = theme.primaryColor;
+                roundsChart.data.datasets[0].backgroundColor = theme.primaryColor + '20';
+                roundsChart.update();
+            }
+        }
+
         // Initialize dashboard
         document.addEventListener('DOMContentLoaded', function() {
             initializeCharts();
+
+            // Apply default theme first
+            fetchAndApplyTheme();
+
+            // Fetch initial stats
             fetchStats();
 
             // Refresh every 2 seconds

@@ -12,6 +12,7 @@ public class GameStats
     public int RoundTime { get; set; }
 
     // Player Information
+    public string PlayerSteamId { get; set; } = string.Empty;
     public int PlayerHealth { get; set; }
     public int PlayerArmor { get; set; }
     public int PlayerMoney { get; set; }
@@ -89,6 +90,7 @@ public class GameStats
             BombExplodedTime = this.BombExplodedTime,
 
             // Player Info
+            PlayerSteamId = this.PlayerSteamId,
             PlayerHealth = this.PlayerHealth,
             PlayerArmor = this.PlayerArmor,
             PlayerMoney = this.PlayerMoney,
