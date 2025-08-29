@@ -1,6 +1,7 @@
 package main
 
 import (
+	"encoding/json"
 	"fmt"
 	dem "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs"
 	common "github.com/markus-wa/demoinfocs-golang/v4/pkg/demoinfocs/common"
@@ -30,7 +31,7 @@ func ScoreBoard(p dem.Parser, err error, players map[int]*common.Player) map[str
 	// Define var(s)
 	var (
 		playerMatrix = make(map[string]map[string]float64)
-		debug        = false
+		debug        = true
 		roundNr      int
 	)
 
@@ -77,7 +78,7 @@ func ScoreBoard(p dem.Parser, err error, players map[int]*common.Player) map[str
 				playerMatrix[e.Killer.Name]["Headshots"]++
 				playerMatrix[e.Killer.Name]["Headshot %"] = playerMatrix[e.Killer.Name]["Headshots"] / playerMatrix[e.Killer.Name]["Kills"] // Calculate headshot percentage
 			}
-		} else {
+		} else {;
 			if debug {
 				fmt.Println("No complete kill event")
 			}
@@ -97,8 +98,8 @@ func ScoreBoard(p dem.Parser, err error, players map[int]*common.Player) map[str
 	return playerMatrix
 }
 
-func Start(file string) {
-	f, err := os.Open(file)
+func StartProgram(file string) string {
+	f, err := os.Open("demos/" + file + ".dem")
 	if err != nil {
 		log.Panic("failed to open demo file: ", err)
 	}
@@ -116,7 +117,7 @@ func Start(file string) {
 		log.Panic("failed to parse demo: ", err)
 	}
 
-	fmt.Printf("Players: %v\n", allPlayers)
+	// fmt.Printf("Players: %v\n", allPlayers)
 
 	// Reset file pointer
 	_, err = f.Seek(0, 0)
@@ -136,12 +137,27 @@ func Start(file string) {
 		log.Panic("failed to parse demo: ", err)
 	}
 
-	for k, v := range scoreboard {
-		fmt.Printf("Player: %s\n", k)
-		for k2, v2 := range v {
-			fmt.Printf("%s: %f", k2, v2)
-			fmt.Printf(" || ")
-		}
-		fmt.Printf("\n")
+	// Save results to JSON
+	jsonScoreboard, err := json.Marshal(scoreboard)
+	if err != nil {
+		log.Panic("failed to marshal json: ", err)
 	}
+	// fmt.Println(string(jsonScoreboard))
+
+	// Save results to JSON file
+	err = os.WriteFile("demos/Results/"+file+".json", jsonScoreboard, 0644)
+	if err != nil {
+		log.Panic("failed to write json file: ", err)
+	}
+
+	//var result string
+	//for k, v := range scoreboard {
+	//	result += fmt.Sprintf("Player: %s\n", k)
+	//	for k2, v2 := range v {
+	//		result += fmt.Sprintf("%s: %f", k2, v2)
+	//		result += " || "
+	//	}
+	//	result += "\n"
+	//}
+	return fmt.Sprintf("%s", "test")
 }

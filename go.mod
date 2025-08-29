@@ -3,24 +3,23 @@ module untitled
 go 1.22.3
 
 require (
-	github.com/charmbracelet/bubbles v0.18.0
 	github.com/charmbracelet/bubbletea v0.26.4
+	github.com/charmbracelet/lipgloss v0.9.1
+	github.com/fogleman/ease v0.0.0-20170301025033-8da417bf1776
+	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/markus-wa/demoinfocs-golang/v4 v4.2.0
 	github.com/markus-wa/godispatch v1.4.1
 )
 
 require (
 	github.com/aymanbagabas/go-osc52/v2 v2.0.1 // indirect
-	github.com/charmbracelet/lipgloss v0.9.1 // indirect
 	github.com/charmbracelet/x/ansi v0.1.2 // indirect
 	github.com/charmbracelet/x/input v0.1.2 // indirect
 	github.com/charmbracelet/x/term v0.1.1 // indirect
 	github.com/charmbracelet/x/windows v0.1.2 // indirect
-	github.com/dustin/go-humanize v1.0.1 // indirect
 	github.com/erikgeiser/coninput v0.0.0-20211004153227-1c3628e74d0f // indirect
 	github.com/golang/geo v0.0.0-20230421003525-6adc56603217 // indirect
 	github.com/golang/snappy v0.0.4 // indirect
-	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/markus-wa/go-unassert v0.1.3 // indirect
 	github.com/markus-wa/gobitread v0.2.3 // indirect
 	github.com/markus-wa/ice-cipher-go v0.0.0-20230901094113-348096939ba7 // indirect
