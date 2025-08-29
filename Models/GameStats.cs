@@ -51,46 +51,24 @@ public class GameStats
     public string LastMessageContent { get; set; } = "No messages yet";
 
     // Computed Properties
-    public int PlayerKDRatio => PlayerDeaths > 0 ? PlayerKills / PlayerDeaths : PlayerKills;
+    public double PlayerKDRatio => PlayerDeaths > 0 ? (double)PlayerKills / PlayerDeaths : PlayerKills;
     public bool IsAlive => PlayerHealth > 0;
     public bool HasArmor => PlayerArmor > 0;
     public bool IsBombPlanted => BombState == "Planted";
     public bool IsBombDefused => BombState == "Defused";
     public bool IsBombExploded => BombState == "Exploded";
 
-    public string GetScoreDisplay()
-    {
-        return $"{ScoreT} - {ScoreCT}";
-    }
+    // Computed properties for display
+    public string GetScoreDisplay() => $"{ScoreT} - {ScoreCT}";
+    public string GetSessionDurationDisplay() => SessionDuration.ToString(@"hh\:mm\:ss");
+    public string GetRoundTimeDisplay() => RoundTime.ToString(@"mm\:ss");
+    public string GetLastMessageTimeDisplay() => LastMessageTime?.ToString("HH:mm:ss") ?? "Never";
 
     public string GetPlayerStatus()
     {
         if (!IsAlive) return "Dead";
         if (HasArmor) return $"Alive ({PlayerHealth}HP, {PlayerArmor}AP)";
         return $"Alive ({PlayerHealth}HP)";
-    }
-
-    public string GetRoundTimeDisplay()
-    {
-        var minutes = RoundTime / 60;
-        var seconds = RoundTime % 60;
-        return $"{minutes:D2}:{seconds:D2}";
-    }
-
-    public string GetSessionDurationDisplay()
-    {
-        return $"{SessionDuration.Hours:D2}:{SessionDuration.Minutes:D2}:{SessionDuration.Seconds:D2}";
-    }
-
-    public string GetLastMessageTimeDisplay()
-    {
-        if (!LastMessageTime.HasValue) return "Never";
-        var timeSince = DateTime.Now - LastMessageTime.Value;
-        if (timeSince.TotalSeconds < 60)
-            return $"{timeSince.TotalSeconds:F0}s ago";
-        if (timeSince.TotalMinutes < 60)
-            return $"{timeSince.TotalMinutes:F0}m ago";
-        return $"{timeSince.TotalHours:F0}h ago";
     }
 
     public GameStats Clone()

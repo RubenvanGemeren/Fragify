@@ -1,5 +1,4 @@
 using CSGSI;
-using CSGSI.Nodes;
 using FragifyTracker.Services;
 using FragifyTracker.UI;
 using Spectre.Console;
@@ -8,40 +7,65 @@ namespace FragifyTracker;
 
 class Program
 {
-    private static GameStateListener? _gameStateListener;
+    private static GameStateListener? _listener;
     private static GameTrackerService? _trackerService;
-    private static bool _isRunning = true;
-    private static DateTime _lastMessageTime = DateTime.MinValue;
-    private static bool _testMode = false;
     private static TestDataGenerator? _testDataGenerator;
+    private static bool _testMode = false;
+    private static bool _isRunning = true;
+    private static IUserInterface? _userInterface;
 
     static async Task Main(string[] args)
     {
-        Console.Title = "Fragify - CS:GO Game Tracker";
-
-        AnsiConsole.Write(
-            new FigletText("Fragify")
-                .Centered()
-                .Color(Color.Blue));
-
-        AnsiConsole.MarkupLine("[bold blue]Counter-Strike: Global Offensive Game State Tracker[/]");
-        AnsiConsole.MarkupLine("[dim]Press Ctrl+C to exit[/]\n");
-
-        // Parse command line arguments
-        var (port, testMode) = ParseArgs(args);
-        _testMode = testMode;
-
         try
         {
-            if (_testMode)
+            var (uiType, webPort, testMode) = ParseArgs(args);
+
+            if (uiType == "help")
             {
-                await InitializeTestMode();
-            }
-            else
-            {
-                await InitializeGameTracker(port);
+                UIFactory.ShowUsage();
+                return;
             }
 
+            _testMode = testMode;
+
+            // Initialize the appropriate UI interface
+            _userInterface = UIFactory.CreateInterface(uiType, webPort);
+            _userInterface.Initialize();
+
+            AnsiConsole.MarkupLine($"[bold green]🎯 Fragify - CS:GO Live Tracker[/]");
+            AnsiConsole.MarkupLine($"[bold blue]UI Mode: {uiType.ToUpper()}[/]");
+
+            if (uiType == "web")
+            {
+                AnsiConsole.MarkupLine($"[bold yellow]🌐 Web Dashboard: http://localhost:{webPort}[/]");
+                AnsiConsole.MarkupLine("[dim]Press Ctrl+C to stop the application[/]");
+            }
+
+            AnsiConsole.WriteLine();
+
+            // Initialize game tracker
+            InitializeGameTracker();
+
+            // Set up event handlers
+            if (_listener != null)
+            {
+                _listener.NewGameState += OnNewGameState;
+            }
+
+            // Start listening
+            if (_listener != null)
+            {
+                _listener.Start();
+                AnsiConsole.MarkupLine("[bold green]✅ Game State Listener started![/]");
+            }
+
+            if (_testMode)
+            {
+                AnsiConsole.MarkupLine("[bold yellow]🧪 Test Mode Enabled[/]");
+                AnsiConsole.MarkupLine("[dim]Use keys 1-6, r for test events[/]");
+            }
+
+            // Run the main loop
             await RunMainLoop();
         }
         catch (Exception ex)
@@ -50,99 +74,80 @@ class Program
         }
         finally
         {
-            Cleanup();
+            _userInterface?.Shutdown();
+            _listener?.Stop();
         }
     }
 
-    private static (int port, bool testMode) ParseArgs(string[] args)
+    private static (string uiType, int webPort, bool testMode) ParseArgs(string[] args)
     {
-        // Default values
-        var port = 3000;
+        var uiType = "cli"; // default
+        var webPort = 5000; // default
         var testMode = false;
 
         for (int i = 0; i < args.Length; i++)
         {
-            if (args[i] == "--port" || args[i] == "-p")
+            switch (args[i].ToLower())
             {
-                if (i + 1 < args.Length && int.TryParse(args[i + 1], out int parsedPort))
-                {
-                    port = parsedPort;
-                }
-            }
-            else if (args[i] == "--test" || args[i] == "-t")
-            {
-                testMode = true;
+                case "--ui" when i + 1 < args.Length:
+                    uiType = args[++i];
+                    break;
+                case "--web-port" when i + 1 < args.Length:
+                    if (int.TryParse(args[++i], out var port))
+                        webPort = port;
+                    break;
+                case "--test" or "-t":
+                    testMode = true;
+                    break;
+                case "--help" or "-h":
+                    return ("help", 5000, false);
             }
         }
 
-        return (port, testMode);
+        return (uiType, webPort, testMode);
     }
 
-    private static async Task InitializeTestMode()
+    private static void InitializeGameTracker()
     {
-        AnsiConsole.MarkupLine("[bold yellow]🧪 TEST MODE ENABLED[/]\n");
-        AnsiConsole.MarkupLine("[yellow]This mode simulates CS:GO game state events for testing.[/]\n");
+        try
+        {
+            _trackerService = new GameTrackerService();
 
-        _trackerService = new GameTrackerService();
-        _trackerService.OnConnectionEstablished();
-
-        _testDataGenerator = new TestDataGenerator(_trackerService);
-
-        AnsiConsole.MarkupLine("[green]✓[/] Test mode initialized");
-        AnsiConsole.MarkupLine("[cyan]Simulating game events every 3 seconds...[/]\n");
-
-        AnsiConsole.MarkupLine("[bold yellow]Test Controls:[/]");
-        AnsiConsole.MarkupLine("[yellow]Press '1' - Simulate round start[/]");
-        AnsiConsole.MarkupLine("[yellow]Press '2' - Simulate bomb planted[/]");
-        AnsiConsole.MarkupLine("[yellow]Press '3' - Simulate bomb defused[/]");
-        AnsiConsole.MarkupLine("[yellow]Press '4' - Simulate round end[/]");
-        AnsiConsole.MarkupLine("[yellow]Press '5' - Simulate player flash[/]");
-        AnsiConsole.MarkupLine("[yellow]Press '6' - Toggle auto-simulation[/]");
-        AnsiConsole.MarkupLine("[yellow]Press 'r' - Reset session[/]\n");
-    }
-
-    private static async Task InitializeGameTracker(int port)
-    {
-        AnsiConsole.Status()
-            .Start("Initializing Game State Listener...", ctx =>
+            if (_testMode)
             {
-                ctx.Status("Creating listener...");
-                _gameStateListener = new GameStateListener(port);
+                _testDataGenerator = new TestDataGenerator(_trackerService);
+            }
 
-                ctx.Status("Setting up event handlers...");
-                _gameStateListener.NewGameState += OnNewGameState;
-                // Note: Disabling intricate events for now due to signature mismatches
-                // _gameStateListener.EnableRaisingIntricateEvents = true;
+            _listener = new GameStateListener(3000);
+            AnsiConsole.MarkupLine("[bold green]✅ Game Tracker initialized![/]");
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[bold red]❌ Failed to initialize game tracker: {ex.Message}[/]");
+            throw;
+        }
+    }
 
-                ctx.Status("Starting listener...");
-                if (!_gameStateListener.Start())
-                {
-                    throw new InvalidOperationException($"Failed to start listener on port {port}. Make sure you have the necessary permissions and the port is available.");
-                }
+    private static void OnNewGameState(GameState gameState)
+    {
+        try
+        {
+            _trackerService?.UpdateGameState(gameState);
 
-                return Task.CompletedTask;
-            });
-
-        _trackerService = new GameTrackerService();
-        _trackerService.OnConnectionEstablished();
-
-        AnsiConsole.MarkupLine($"[green]✓[/] Game State Listener started on port [bold]{port}[/]");
-        AnsiConsole.MarkupLine("[yellow]Make sure you have the gamestate_integration config file set up in your CS:GO cfg folder![/]\n");
-        AnsiConsole.MarkupLine("[cyan]Waiting for CS:GO to send game state data...[/]\n");
-
-        // Additional debugging info
-        AnsiConsole.MarkupLine("[bold yellow]Debugging Tips:[/]");
-        AnsiConsole.MarkupLine("[yellow]1. Make sure CS:GO is running[/]");
-        AnsiConsole.MarkupLine("[yellow]2. Execute: exec gamestate_integration_fragify in CS:GO console[/]");
-        AnsiConsole.MarkupLine("[yellow]3. Join a game (workshop maps, competitive, etc.)[/]");
-        AnsiConsole.MarkupLine("[yellow]4. Check CS:GO console for any error messages[/]\n");
+            if (!_testMode)
+            {
+                AnsiConsole.MarkupLine("[bold green]🎯 Received message from CS:GO![/]");
+            }
+        }
+        catch (Exception ex)
+        {
+            AnsiConsole.MarkupLine($"[bold red]❌ Error processing game state: {ex.Message}[/]");
+        }
     }
 
     private static async Task RunMainLoop()
     {
-        var displayManager = new DisplayManager();
-
-        while (_isRunning)
+        while (_isRunning && _userInterface?.IsRunning == true)
         {
             try
             {
@@ -160,7 +165,7 @@ class Program
                     CheckConnectionStatus();
                 }
 
-                displayManager.UpdateDisplay(_trackerService?.GetCurrentStats());
+                _userInterface.UpdateDisplay(_trackerService?.GetCurrentStats());
                 await Task.Delay(100); // Update every 100ms
             }
             catch (Exception ex)
@@ -212,69 +217,14 @@ class Program
 
     private static void CheckConnectionStatus()
     {
-        if (_trackerService != null)
+        var stats = _trackerService?.GetCurrentStats();
+        if (stats != null)
         {
-            var stats = _trackerService.GetCurrentStats();
-            var timeSinceLastMessage = DateTime.Now - _lastMessageTime;
-
-            // If no messages for more than 10 seconds, mark as disconnected
-            if (stats.MessagesReceived > 0 && timeSinceLastMessage.TotalSeconds > 10)
+            var timeSinceLastMessage = DateTime.Now - (stats.LastMessageTime ?? DateTime.MinValue);
+            if (timeSinceLastMessage.TotalMinutes > 1)
             {
-                _trackerService.OnConnectionLost();
+                _trackerService?.OnConnectionLost();
             }
         }
-    }
-
-    private static void OnNewGameState(GameState gameState)
-    {
-        _lastMessageTime = DateTime.Now;
-
-        // Log the incoming message for debugging
-        AnsiConsole.MarkupLine($"[bold green]🎯 Received message from CS:GO![/]");
-        AnsiConsole.MarkupLine($"[green]Map: {gameState.Map.Name}[/]");
-        AnsiConsole.MarkupLine($"[green]Phase: {gameState.Round.Phase}[/]");
-        AnsiConsole.MarkupLine($"[green]Player Health: {gameState.Player?.State.Health ?? 0}[/]\n");
-
-        _trackerService?.UpdateGameState(gameState);
-
-        // Check for round phase changes manually since we can't use the intricate events
-        CheckForRoundPhaseChanges(gameState);
-    }
-
-    private static void CheckForRoundPhaseChanges(GameState gameState)
-    {
-        if (gameState.Round.Phase == RoundPhase.Live)
-        {
-            _trackerService?.OnRoundBegin();
-            AnsiConsole.MarkupLine("[bold green]Round Started![/]");
-        }
-        else if (gameState.Round.Phase == RoundPhase.Over)
-        {
-            _trackerService?.OnRoundEnd();
-            AnsiConsole.MarkupLine("[bold red]Round Ended![/]");
-        }
-
-        // Check bomb state changes
-        if (gameState.Bomb.State == BombState.Planted)
-        {
-            _trackerService?.OnBombPlanted();
-            AnsiConsole.MarkupLine("[bold yellow]💣 Bomb Planted![/]");
-        }
-        else if (gameState.Bomb.State == BombState.Defused)
-        {
-            _trackerService?.OnBombDefused();
-            AnsiConsole.MarkupLine("[bold green]✅ Bomb Defused![/]");
-        }
-        else if (gameState.Bomb.State == BombState.Exploded)
-        {
-            _trackerService?.OnBombExploded();
-            AnsiConsole.MarkupLine("[bold red]💥 Bomb Exploded![/]");
-        }
-    }
-
-    private static void Cleanup()
-    {
-        _gameStateListener?.Stop();
-        AnsiConsole.MarkupLine("\n[yellow]Shutting down...[/]");
     }
 }

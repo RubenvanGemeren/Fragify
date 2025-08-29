@@ -4,7 +4,7 @@ using FragifyTracker.Models;
 
 namespace FragifyTracker.UI;
 
-public class DisplayManager
+public class CliInterface : IUserInterface
 {
     private readonly Table _gameInfoTable;
     private readonly Table _playerStatsTable;
@@ -13,8 +13,9 @@ public class DisplayManager
     private readonly Panel _progressPanel;
     private GameStats? _lastStats;
     private bool _isFirstDisplay = true;
+    public bool IsRunning { get; private set; } = true;
 
-    public DisplayManager()
+    public CliInterface()
     {
         // Create tables once
         _gameInfoTable = CreateGameInfoTable();
@@ -22,6 +23,17 @@ public class DisplayManager
         _sessionStatsTable = CreateSessionStatsTable();
         _debugInfoTable = CreateDebugInfoTable();
         _progressPanel = CreateProgressPanel();
+    }
+
+    public void Initialize()
+    {
+        // CLI interface is ready immediately
+        IsRunning = true;
+    }
+
+    public void Shutdown()
+    {
+        IsRunning = false;
     }
 
     public void UpdateDisplay(GameStats? stats)
@@ -48,6 +60,12 @@ public class DisplayManager
             UpdateTables(stats);
             RefreshDisplay();
         }
+    }
+
+    public void HandleInput(ConsoleKeyInfo? key = null)
+    {
+        // CLI interface doesn't need external input handling
+        // Input is handled in the main loop
     }
 
     private void RefreshDisplay()
@@ -110,7 +128,7 @@ public class DisplayManager
     private void DisplayHeader()
     {
         AnsiConsole.Write(
-            new Rule("[bold blue]Fragify - CS:GO Live Tracker[/]")
+            new Rule("[bold blue]Fragify - CS:GO Live Tracker (CLI Mode)[/]")
                 .RuleStyle("blue")
                 .Centered());
         AnsiConsole.WriteLine();
