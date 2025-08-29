@@ -149,6 +149,7 @@ public class WebInterface : IUserInterface
             padding: 1rem;
             text-align: center;
             backdrop-filter: blur(10px);
+            margin-top: 8px; /* Account for fixed banner */
         }
 
         .header h1 {
@@ -191,6 +192,7 @@ public class WebInterface : IUserInterface
             padding: 1.5rem;
             max-width: 1400px;
             margin: 0 auto;
+            margin-bottom: 120px; /* Account for debug controls */
         }
 
         .card {
@@ -295,15 +297,298 @@ public class WebInterface : IUserInterface
                 grid-template-columns: 1fr;
             }
         }
+
+        /* Game State Banner - Top Edge Only */
+        .game-state-banner {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 8px;
+            background: var(--banner-color, #4A90E2);
+            box-shadow: 0 0 20px var(--banner-color, #4A90E2);
+            z-index: 1000;
+            transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+            overflow: hidden;
+        }
+
+        .game-state-banner::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.4), transparent);
+            animation: shimmer 4s infinite;
+        }
+
+        /* Banner States */
+        .game-state-banner.freezetime {
+            background: linear-gradient(90deg, #87CEEB, #B0E0E6, #87CEEB);
+            box-shadow: 0 0 30px #87CEEB, 0 0 60px rgba(135, 206, 235, 0.5);
+        }
+
+        .game-state-banner.round-won {
+            background: linear-gradient(90deg, #32CD32, #00FF7F, #32CD32);
+            box-shadow: 0 0 30px #32CD32, 0 0 60px rgba(50, 205, 50, 0.5);
+        }
+
+        .game-state-banner.round-lost {
+            background: linear-gradient(90deg, #DC143C, #FF4500, #DC143C);
+            box-shadow: 0 0 30px #DC143C, 0 0 60px rgba(220, 20, 60, 0.5);
+        }
+
+        .game-state-banner.bomb-planted {
+            background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
+            box-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255, 215, 0, 0.5);
+            animation: bombPlantedPulse 1s ease-in-out infinite;
+        }
+
+        .game-state-banner.bomb-exploded {
+            background: linear-gradient(90deg, #FF4500, #FF0000, #FF4500);
+            box-shadow: 0 0 40px #FF4500, 0 0 80px rgba(255, 69, 0, 0.7);
+            animation: bombExplosion 0.5s ease-out;
+        }
+
+        /* Fire effect for bomb explosion */
+        .game-state-banner.bomb-exploded::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 20% 50%, rgba(255, 255, 0, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at 80% 50%, rgba(255, 69, 0, 0.8) 0%, transparent 50%),
+                radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.6) 0%, transparent 50%);
+            animation: fireFlicker 0.1s infinite alternate;
+        }
+
+        /* Freezetime specific effects */
+        .game-state-banner.freezetime::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background:
+                radial-gradient(circle at 30% 50%, rgba(135, 206, 235, 0.6) 0%, transparent 50%),
+                radial-gradient(circle at 70% 50%, rgba(176, 224, 230, 0.6) 0%, transparent 50%);
+            animation: frostGlow 2s ease-in-out infinite alternate;
+        }
+
+        /* Round won/lost pulse effects */
+        .game-state-banner.round-won,
+        .game-state-banner.round-lost {
+            animation: roundResultPulse 1.5s ease-in-out infinite;
+        }
+
+        /* Bomb Timer Box - Styled like theme box */
+        .bomb-overlay {
+            display: none;
+            margin-left: 1rem;
+            vertical-align: top;
+            margin-top: 1rem;
+        }
+
+        .bomb-timer {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+            padding: 0.5rem 1rem;
+            min-width: 200px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+        }
+
+        .bomb-icon {
+            font-size: 1.5rem;
+            color: #FFD700;
+            text-shadow: 0 0 10px #FFD700;
+            animation: bombIconPulse 1s ease-in-out infinite;
+            flex-shrink: 0;
+        }
+
+        .bomb-timer-content {
+            flex: 1;
+            text-align: center;
+        }
+
+        .bomb-timer-text {
+            color: #FFD700;
+            font-size: 1.2rem;
+            font-weight: bold;
+            margin-bottom: 0.5rem;
+            display: block;
+        }
+
+        .bomb-progress-bar {
+            width: 100%;
+            height: 8px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 4px;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .bomb-progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #FFD700, #FFA500);
+            transition: width 0.1s linear;
+            border-radius: 4px;
+        }
+
+        .bomb-progress-fill.critical {
+            background: linear-gradient(90deg, #FF4500, #FF0000);
+            animation: criticalPulse 0.5s ease-in-out infinite;
+        }
+
+        /* Debug Controls */
+        .debug-controls {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            background: rgba(0, 0, 0, 0.8);
+            padding: 1rem;
+            backdrop-filter: blur(10px);
+            border-top: 1px solid rgba(255, 255, 255, 0.2);
+            z-index: 999;
+        }
+
+        .debug-controls h3 {
+            color: var(--primary-color, #4ade80);
+            margin-bottom: 1rem;
+            text-align: center;
+        }
+
+        .debug-buttons {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 0.5rem;
+            justify-content: center;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        .debug-btn {
+            padding: 0.5rem 1rem;
+            border: none;
+            border-radius: 6px;
+            background: var(--card-background, rgba(255, 255, 255, 0.1));
+            color: var(--text-color, white);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--card-border, rgba(255, 255, 255, 0.2));
+            font-size: 0.9rem;
+        }
+
+        .debug-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        }
+
+        .debug-btn.active {
+            background: var(--primary-color, #4ade80);
+            color: white;
+        }
+
+        /* Animations */
+        @keyframes shimmer {
+            0% { left: -100%; }
+            100% { left: 100%; }
+        }
+
+        @keyframes bombPlantedPulse {
+            0%, 100% {
+                box-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255, 215, 0, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 40px #FFD700, 0 0 80px rgba(255, 215, 0, 0.7);
+            }
+        }
+
+        @keyframes bombExplosion {
+            0% {
+                transform: scaleY(1);
+                box-shadow: 0 0 20px #FF4500;
+            }
+            50% {
+                transform: scaleY(2);
+                box-shadow: 0 0 60px #FF4500, 0 0 120px rgba(255, 69, 0, 0.8);
+            }
+            100% {
+                transform: scaleY(1);
+                box-shadow: 0 0 40px #FF4500, 0 0 80px rgba(255, 69, 0, 0.7);
+            }
+        }
+
+        @keyframes fireFlicker {
+            0% { opacity: 0.8; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes frostGlow {
+            0% { opacity: 0.6; }
+            100% { opacity: 1; }
+        }
+
+        @keyframes roundResultPulse {
+            0%, 100% {
+                box-shadow: 0 0 30px currentColor, 0 0 60px rgba(0, 0, 0, 0.3);
+            }
+            50% {
+                box-shadow: 0 0 40px currentColor, 0 0 80px rgba(0, 0, 0, 0.5);
+            }
+        }
+
+        @keyframes bombIconPulse {
+            0%, 100% {
+                transform: scale(1);
+                text-shadow: 0 0 20px #FFD700;
+            }
+            50% {
+                transform: scale(1.1);
+                text-shadow: 0 0 30px #FFD700, 0 0 40px rgba(255, 215, 0, 0.5);
+            }
+        }
+
+        @keyframes criticalPulse {
+            0%, 100% {
+                box-shadow: 0 0 20px #FF4500;
+            }
+            50% {
+                box-shadow: 0 0 40px #FF4500, 0 0 60px rgba(255, 69, 0, 0.7);
+            }
+        }
     </style>
 </head>
 <body>
+    <div class=""game-state-banner""></div>
+
     <div class=""header"">
         <h1>🎯 Fragify</h1>
         <p>Counter-Strike: Global Offensive Web Dashboard</p>
         <div class=""theme-info"">
             <span class=""theme-name"" id=""theme-name"">Default Theme</span>
             <span class=""theme-description"" id=""theme-description"">CS:GO Dashboard</span>
+        </div>
+
+        <!-- Bomb Timer Box -->
+        <div class=""bomb-overlay"" id=""bomb-overlay"">
+            <div class=""bomb-timer"">
+                <div class=""bomb-icon"">💣</div>
+                <div class=""bomb-timer-content"">
+                    <div class=""bomb-timer-text"" id=""bomb-timer-text"">40</div>
+                    <div class=""bomb-progress-bar"">
+                        <div class=""bomb-progress-fill"" id=""bomb-progress-fill""></div>
+                    </div>
+                </div>
+            </div>
         </div>
     </div>
 
@@ -476,8 +761,127 @@ public class WebInterface : IUserInterface
         Auto-refreshing every 2 seconds | Last update: <span id=""last-refresh"">Never</span>
     </div>
 
+    <!-- Debug Controls -->
+    <div class=""debug-controls"">
+        <h3>🎮 Debug Controls - Test Game States Live</h3>
+        <div class=""debug-buttons"">
+            <button class=""debug-btn"" onclick=""setGameState('default')"">Default</button>
+            <button class=""debug-btn"" onclick=""setGameState('freezetime')"">Freezetime</button>
+            <button class=""debug-btn"" onclick=""setGameState('round-won')"">Round Won</button>
+            <button class=""debug-btn"" onclick=""setGameState('round-lost')"">Round Lost</button>
+            <button class=""debug-btn"" onclick=""setGameState('bomb-planted')"">Bomb Planted</button>
+            <button class=""debug-btn"" onclick=""setGameState('bomb-exploded')"">Bomb Exploded</button>
+            <button class=""debug-btn"" onclick=""simulateKill()"">Simulate Kill</button>
+            <button class=""debug-btn"" onclick=""simulateDeath()"">Simulate Death</button>
+            <button class=""debug-btn"" onclick=""simulateAssist()"">Simulate Assist</button>
+            <button class=""debug-btn"" onclick=""simulateMVP()"">Simulate MVP</button>
+        </div>
+        <div style=""margin-top: 1rem; text-align: center; color: var(--text-color, #cbd5e1);"">
+            <strong>Current State:</strong> <span id=""current-game-state"">Default</span>
+        </div>
+    </div>
+
     <script>
         let roundsChart;
+        let currentGameState = 'default';
+        let bombTimer = null;
+        let bombCountdown = 40;
+
+        // Game State Banner Control
+        function setGameState(state) {
+            const banner = document.querySelector('.game-state-banner');
+
+            // Remove all existing state classes
+            banner.className = 'game-state-banner';
+
+            // Add new state class
+            if (state !== 'default') {
+                banner.classList.add(state);
+            }
+
+            currentGameState = state;
+            document.getElementById('current-game-state').textContent = state.charAt(0).toUpperCase() + state.slice(1).replace('-', ' ');
+
+            // Special handling for bomb planted state - only start if no timer is active
+            if (state === 'bomb-planted' && !bombTimer) {
+                startBombCountdown();
+            }
+
+            // Special handling for bomb explosion
+            if (state === 'bomb-exploded') {
+                stopBombCountdown();
+                // Reset explosion animation after it completes
+                setTimeout(() => {
+                    if (currentGameState === 'bomb-exploded') {
+                        banner.style.animation = 'none';
+                        banner.offsetHeight; // Trigger reflow
+                        banner.style.animation = 'bombExplosion 0.5s ease-out';
+                    }
+                }, 500);
+            }
+        }
+
+        // Bomb countdown functions
+        function startBombCountdown() {
+            // Prevent starting if timer is already active
+            if (bombTimer) {
+                return;
+            }
+
+            bombCountdown = 40;
+            const bombOverlay = document.getElementById('bomb-overlay');
+            const bombTimerText = document.getElementById('bomb-timer-text');
+            const bombProgressFill = document.getElementById('bomb-progress-fill');
+
+            // Reset progress bar
+            bombProgressFill.style.width = '100%';
+            bombProgressFill.classList.remove('critical');
+            bombTimerText.style.color = '#FFD700';
+
+            bombOverlay.style.display = 'inline-block';
+
+            bombTimer = setInterval(() => {
+                bombCountdown--;
+                bombTimerText.textContent = bombCountdown;
+
+                // Update progress bar
+                const progressPercent = (bombCountdown / 40) * 100;
+                bombProgressFill.style.width = progressPercent + '%';
+
+                // Critical phase (last 10 seconds)
+                if (bombCountdown <= 10) {
+                    bombProgressFill.classList.add('critical');
+                    bombTimerText.style.color = '#FF4500';
+                } else {
+                    bombProgressFill.classList.remove('critical');
+                    bombTimerText.style.color = '#FFD700';
+                }
+
+                if (bombCountdown <= 0) {
+                    clearInterval(bombTimer);
+                    bombTimer = null;
+                    bombOverlay.style.display = 'none';
+                    setGameState('bomb-exploded');
+                }
+            }, 1000);
+        }
+
+        function stopBombCountdown() {
+            if (bombTimer) {
+                clearInterval(bombTimer);
+                bombTimer = null;
+            }
+            document.getElementById('bomb-overlay').style.display = 'none';
+            bombCountdown = 40;
+
+            // Reset progress bar
+            const bombProgressFill = document.getElementById('bomb-progress-fill');
+            const bombTimerText = document.getElementById('bomb-timer-text');
+            bombProgressFill.style.width = '100%';
+            bombProgressFill.classList.remove('critical');
+            bombTimerText.style.color = '#FFD700';
+            bombTimerText.textContent = '40';
+        }
 
         function updateDashboard(stats) {
             // Update game information
@@ -537,7 +941,91 @@ public class WebInterface : IUserInterface
             const now = new Date();
             document.getElementById('last-refresh').textContent = now.toLocaleTimeString();
             document.getElementById('last-update').textContent = now.toLocaleTimeString();
+
+            // Update game state banner based on real game data
+            updateBannerFromGameState(stats);
         }
+
+        // Function to update banner based on real game state data
+        function updateBannerFromGameState(gameStateData) {
+            if (!gameStateData) return;
+
+            // Check for round results first
+            if (gameStateData.IsRoundWon) {
+                setGameState('round-won');
+                return;
+            }
+
+            if (gameStateData.IsRoundLost) {
+                setGameState('round-lost');
+                return;
+            }
+
+            // Check bomb state
+            if (gameStateData.BombState === 'Planted') {
+                setGameState('bomb-planted');
+                return;
+            }
+
+            if (gameStateData.BombState === 'Exploded') {
+                setGameState('bomb-exploded');
+                return;
+            }
+
+            // Check game phase
+            if (gameStateData.CurrentPhase === 'Freezetime') {
+                setGameState('freezetime');
+                return;
+            }
+
+                    // Default state
+        setGameState('default');
+    }
+
+    // Simulation functions for debugging
+    function simulateKill() {
+        const currentKills = parseInt(document.getElementById('player-kills').textContent) || 0;
+        document.getElementById('player-kills').textContent = currentKills + 1;
+
+        // Update player score
+        const currentScore = parseInt(document.getElementById('player-score').textContent) || 0;
+        document.getElementById('player-score').textContent = currentScore + 100;
+
+        console.log('Simulated kill - Kills:', currentKills + 1, 'Score:', currentScore + 100);
+    }
+
+    function simulateDeath() {
+        const currentDeaths = parseInt(document.getElementById('player-deaths').textContent) || 0;
+        document.getElementById('player-deaths').textContent = currentDeaths + 1;
+
+        // Update player score
+        const currentScore = parseInt(document.getElementById('player-score').textContent) || 0;
+        document.getElementById('player-score').textContent = Math.max(0, currentScore - 300);
+
+        console.log('Simulated death - Deaths:', currentDeaths + 1, 'Score:', Math.max(0, currentScore - 300));
+    }
+
+    function simulateAssist() {
+        const currentAssists = parseInt(document.getElementById('player-assists').textContent) || 0;
+        document.getElementById('player-assists').textContent = currentAssists + 1;
+
+        // Update player score
+        const currentScore = parseInt(document.getElementById('player-score').textContent) || 0;
+        document.getElementById('player-score').textContent = currentScore + 50;
+
+        console.log('Simulated assist - Assists:', currentAssists + 1, 'Score:', currentScore + 50);
+    }
+
+    function simulateMVP() {
+        const currentMvps = parseInt(document.getElementById('player-mvps').textContent) || 0;
+        document.getElementById('player-mvps').textContent = currentMvps + 1;
+
+        // Update player score
+        const currentScore = parseInt(document.getElementById('player-score').textContent) || 0;
+        document.getElementById('player-score').textContent = currentScore + 200;
+
+        console.log('Simulated MVP - MVPs:', currentMvps + 1, 'Score:', currentScore + 200);
+    }
 
         function formatTime(seconds) {
             const mins = Math.floor(seconds / 60);
