@@ -42,7 +42,8 @@ public class WebMapThemeService
                 AccentColor = "#fbbf24",
                 DangerColor = "#ef4444",
                 SuccessColor = "#10b981",
-                WarningColor = "#f59e0b"
+                WarningColor = "#f59e0b",
+                MinimapUrl = ""
             },
             ["de_dust2"] = new WebMapTheme
             {
@@ -57,7 +58,8 @@ public class WebMapThemeService
                 AccentColor = "#CD853F",
                 DangerColor = "#DC143C",
                 SuccessColor = "#32CD32",
-                WarningColor = "#FFD700"
+                WarningColor = "#FFD700",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_dust2_radar.png"
             },
             ["de_mirage"] = new WebMapTheme
             {
@@ -72,7 +74,8 @@ public class WebMapThemeService
                 AccentColor = "#B8860B",
                 DangerColor = "#B22222",
                 SuccessColor = "#228B22",
-                WarningColor = "#FF8C00"
+                WarningColor = "#FF8C00",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_mirage_radar.png"
             },
             ["de_inferno"] = new WebMapTheme
             {
@@ -87,7 +90,8 @@ public class WebMapThemeService
                 AccentColor = "#FF8C00",
                 DangerColor = "#DC143C",
                 SuccessColor = "#00FF7F",
-                WarningColor = "#FFD700"
+                WarningColor = "#FFD700",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_inferno_radar.png"
             },
             ["de_cache"] = new WebMapTheme
             {
@@ -102,7 +106,8 @@ public class WebMapThemeService
                 AccentColor = "#87CEEB",
                 DangerColor = "#FF6B6B",
                 SuccessColor = "#98FB98",
-                WarningColor = "#FFB6C1"
+                WarningColor = "#FFB6C1",
+                MinimapUrl = "https://raw.githubusercontent.com/GameTracking-CSGO/master/game/csgo/resource/overviews/de_cache_radar.png"
             },
             ["de_overpass"] = new WebMapTheme
             {
@@ -117,7 +122,8 @@ public class WebMapThemeService
                 AccentColor = "#00CED1",
                 DangerColor = "#FF4500",
                 SuccessColor = "#00FF7F",
-                WarningColor = "#FFD700"
+                WarningColor = "#FFD700",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_overpass_radar.png"
             },
             ["de_nuke"] = new WebMapTheme
             {
@@ -132,7 +138,8 @@ public class WebMapThemeService
                 AccentColor = "#00FF7F",
                 DangerColor = "#FF0000",
                 SuccessColor = "#00FF00",
-                WarningColor = "#FFFF00"
+                WarningColor = "#FFFF00",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_nuke_radar.png"
             },
             ["de_ancient"] = new WebMapTheme
             {
@@ -147,7 +154,8 @@ public class WebMapThemeService
                 AccentColor = "#CD853F",
                 DangerColor = "#B22222",
                 SuccessColor = "#228B22",
-                WarningColor = "#FF8C00"
+                WarningColor = "#FF8C00",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_ancient_radar.png"
             },
             ["de_vertigo"] = new WebMapTheme
             {
@@ -162,7 +170,8 @@ public class WebMapThemeService
                 AccentColor = "#00CED1",
                 DangerColor = "#FF6B6B",
                 SuccessColor = "#98FB98",
-                WarningColor = "#FFB6C1"
+                WarningColor = "#FFB6C1",
+                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_vertigo_radar.png"
             }
         };
     }
@@ -182,6 +191,7 @@ public class WebMapTheme
     public string DangerColor { get; set; } = "#ef4444";
     public string SuccessColor { get; set; } = "#10b981";
     public string WarningColor { get; set; } = "#f59e0b";
+    public string MinimapUrl { get; set; } = string.Empty;
 
     public string GetCssVariables()
     {

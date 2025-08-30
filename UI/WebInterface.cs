@@ -13,11 +13,13 @@ public class WebInterface : IUserInterface
     public bool IsRunning { get; private set; } = false;
     private readonly int _port;
     private readonly WebMapThemeService _mapThemeService;
+    private readonly MinimapImageService _minimapImageService;
 
     public WebInterface(int port = 5000)
     {
         _port = port;
         _mapThemeService = new WebMapThemeService();
+        _minimapImageService = new MinimapImageService();
     }
 
     public void Initialize()
@@ -102,12 +104,47 @@ public class WebInterface : IUserInterface
         });
 
         // API endpoint for getting current map theme
-        _app.MapGet("/api/theme", () =>
+        _app.MapGet("/api/theme", (string? mapName) =>
         {
-            if (_lastStats?.MapName == null)
-                return Results.Json(_mapThemeService.GetDefaultTheme());
+            // If no mapName provided, use current game map
+            if (string.IsNullOrEmpty(mapName))
+            {
+                if (_lastStats?.MapName == null)
+                    return Results.Json(_mapThemeService.GetDefaultTheme());
 
-            var theme = _mapThemeService.GetMapTheme(_lastStats.MapName);
+                mapName = _lastStats.MapName;
+            }
+
+            var theme = _mapThemeService.GetMapTheme(mapName);
+
+            // Add minimap URLs from the MinimapImageService
+            if (theme != null && !string.IsNullOrEmpty(mapName))
+            {
+                var minimapUrls = _minimapImageService.GetMinimapUrls(mapName);
+                if (minimapUrls.Count > 0)
+                {
+                    // Create a dynamic object with theme properties and minimap URLs
+                    var themeWithMinimap = new
+                    {
+                        theme.Name,
+                        theme.Description,
+                        theme.PrimaryColor,
+                        theme.SecondaryColor,
+                        theme.BackgroundGradient,
+                        theme.CardBackground,
+                        theme.CardBorder,
+                        theme.TextColor,
+                        theme.AccentColor,
+                        theme.DangerColor,
+                        theme.SuccessColor,
+                        theme.WarningColor,
+                        minimapUrl = minimapUrls[0], // Primary URL
+                        minimapUrls = minimapUrls // All available URLs
+                    };
+                    return Results.Json(themeWithMinimap);
+                }
+            }
+
             return Results.Json(theme);
         });
 
@@ -565,6 +602,62 @@ public class WebInterface : IUserInterface
                 box-shadow: 0 0 40px #FF4500, 0 0 60px rgba(255, 69, 0, 0.7);
             }
         }
+
+        /* Custom Interactive Map Styles */
+        .custom-interactive-map {
+            position: relative;
+            width: 100%;
+            height: 400px;
+            border: 2px solid var(--card-border, rgba(255, 255, 255, 0.2));
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+            background: rgba(255, 255, 255, 0.05);
+            overflow: hidden;
+        }
+
+        .custom-interactive-map img {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+        }
+
+        .custom-interactive-map svg {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+        }
+
+        .callout-polygon {
+            fill: rgba(255, 255, 255, 0.1);
+            stroke: rgba(255, 255, 255, 0.3);
+            stroke-width: 1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .callout-polygon:hover {
+            fill: rgba(255, 255, 255, 0.2);
+            stroke: rgba(255, 255, 255, 0.6);
+            stroke-width: 2;
+        }
+
+        .callout-tooltip {
+            display: none;
+            position: absolute;
+            background: rgba(0, 0, 0, 0.9);
+            color: white;
+            padding: 0.5rem;
+            border-radius: 4px;
+            font-size: 0.9rem;
+            pointer-events: none;
+            z-index: 1000;
+            max-width: 200px;
+            text-align: center;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+        }
     </style>
 </head>
 <body>
@@ -620,6 +713,28 @@ public class WebInterface : IUserInterface
                 <div class=""stat-item"">
                     <span class=""stat-label"">Round Time:</span>
                     <span class=""stat-value"" id=""round-time"">Loading...</span>
+                </div>
+            </div>
+
+                        <!-- Interactive Map Display -->
+            <div class=""interactive-map-container"" style=""margin-top: 1.5rem; text-align: center;"">
+                <h3 style=""margin-bottom: 1rem; color: var(--accent-color, #fbbf24);"">🗺️ Interactive Map with Callouts</h3>
+                <div class=""map-wrapper"" style=""display: inline-block; position: relative; width: 100%; max-width: 600px;"">
+                    <div id=""interactive-map"" class=""custom-interactive-map"" style=""display: none; position: relative; width: 100%; height: 400px; border: 2px solid var(--card-border, rgba(255, 255, 255, 0.2)); border-radius: 8px; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3); background: rgba(255, 255, 255, 0.05); overflow: hidden;"">
+                        <img id=""map-image"" src="""" alt=""Map minimap"" style=""width: 100%; height: 100%; object-fit: contain;"">
+                        <svg id=""callout-overlay"" viewBox=""0 0 800 800"" preserveAspectRatio=""none"" style=""position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none;"">
+                            <!-- Callout polygons will be dynamically inserted here -->
+                        </svg>
+                        <div id=""callout-tooltip"" class=""callout-tooltip"" style=""display: none; position: absolute; background: rgba(0, 0, 0, 0.9); color: white; padding: 0.5rem; border-radius: 4px; font-size: 0.9rem; pointer-events: none; z-index: 1000; max-width: 200px; text-align: center; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);""></div>
+                    </div>
+                    <div id=""map-fallback"" style=""display: none; padding: 2rem; background: rgba(255, 255, 255, 0.05); border-radius: 8px; border: 2px dashed var(--card-border, rgba(255, 255, 255, 0.2)); height: 400px; display: flex; align-items: center; justify-content: center; flex-direction: column;"">
+                        <p style=""color: var(--text-color, #cbd5e1); margin-bottom: 0.5rem; font-size: 1.1rem;"">🗺️ Interactive map not available</p>
+                        <p style=""color: var(--text-color, #cbd5e1); font-size: 0.9rem; opacity: 0.8; margin-bottom: 1rem;"">Map: <span id=""fallback-map-name"">Unknown</span></p>
+                        <a href=""#"" id=""external-map-link"" target=""_blank"" style=""color: var(--accent-color, #fbbf24); text-decoration: none; padding: 0.5rem 1rem; border: 1px solid var(--accent-color, #fbbf24); border-radius: 4px; transition: all 0.3s ease;"">Open in New Tab</a>
+                    </div>
+                </div>
+                <div style=""margin-top: 0.5rem; font-size: 0.9rem; color: var(--text-color, #cbd5e1); opacity: 0.8;"">
+                    Interactive map with custom callouts | <a href=""https://totalcsgo.com"" target=""_blank"" style=""color: var(--accent-color, #fbbf24);"">Powered by Total CS</a>
                 </div>
             </div>
         </div>
@@ -892,6 +1007,9 @@ public class WebInterface : IUserInterface
             document.getElementById('score').textContent = `${stats.scoreT || 0} - ${stats.scoreCT || 0}`;
             document.getElementById('round-time').textContent = formatTime(stats.roundTime || 0);
 
+            // Update minimap display
+            updateMinimap(stats.mapName);
+
             // Update player statistics
             document.getElementById('player-kills').textContent = stats.playerKills || 0;
             document.getElementById('player-deaths').textContent = stats.playerDeaths || 0;
@@ -912,6 +1030,243 @@ public class WebInterface : IUserInterface
 
             document.getElementById('health-bar').style.width = healthPercent + '%';
             document.getElementById('armor-bar').style.width = armorPercent + '%';
+
+            // Update session statistics
+            document.getElementById('session-duration').textContent = stats.sessionDuration || '00:00:00';
+            document.getElementById('total-rounds').textContent = stats.totalRounds || 0;
+            document.getElementById('rounds-won').textContent = stats.roundsWon || 0;
+            document.getElementById('rounds-lost').textContent = stats.roundsLost || 0;
+            document.getElementById('win-rate').textContent = `${(stats.winRate || 0).toFixed(1)}%`;
+
+            // Update debug information
+            const isConnected = stats.isConnected || false;
+            const statusIndicator = document.getElementById('status-indicator');
+            const connectionStatus = document.getElementById('connection-status');
+
+            if (isConnected) {
+                statusIndicator.className = 'status-indicator status-connected';
+                connectionStatus.textContent = 'Connected';
+            } else {
+                statusIndicator.className = 'status-indicator status-disconnected';
+                connectionStatus.textContent = 'Disconnected';
+            }
+
+            document.getElementById('messages-received').textContent = stats.messagesReceived || 0;
+            document.getElementById('last-message-time').textContent = stats.lastMessageTime || 'Never';
+            document.getElementById('last-message-content').textContent = stats.lastMessageContent || 'No messages yet';
+
+            // Update last refresh time
+            const now = new Date();
+            document.getElementById('last-refresh').textContent = now.toLocaleTimeString();
+            document.getElementById('last-update').textContent = now.toLocaleTimeString();
+
+            // Update game state banner based on real game data
+            updateBannerFromGameState(stats);
+        }
+
+                        function updateMinimap(mapName) {
+            if (!mapName || mapName === 'Unknown') {
+                document.getElementById('interactive-map').style.display = 'none';
+                document.getElementById('map-fallback').style.display = 'block';
+                document.getElementById('fallback-map-name').textContent = 'Unknown';
+                return;
+            }
+
+            // Get the map image URL and callout data for the selected map
+            const mapData = getMapData(mapName);
+
+            if (mapData) {
+                const interactiveMap = document.getElementById('interactive-map');
+                const fallback = document.getElementById('map-fallback');
+                const mapImage = document.getElementById('map-image');
+                const calloutOverlay = document.getElementById('callout-overlay');
+
+                // Show the interactive map
+                interactiveMap.style.display = 'block';
+                fallback.style.display = 'none';
+
+                // Set the map image
+                mapImage.src = mapData.imageUrl;
+
+                // Update the external link
+                const externalLink = document.getElementById('external-map-link');
+                externalLink.href = mapData.totalCsUrl;
+
+                // Generate callout polygons
+                generateCalloutPolygons(calloutOverlay, mapData.callouts);
+
+                console.log(`Loading interactive map for ${mapName}`);
+            } else {
+                // No interactive map available for this map
+                document.getElementById('interactive-map').style.display = 'none';
+                document.getElementById('map-fallback').style.display = 'block';
+                document.getElementById('fallback-map-name').textContent = mapName;
+
+                // Disable the external link
+                const externalLink = document.getElementById('external-map-link');
+                externalLink.href = '#';
+                externalLink.style.opacity = '0.5';
+                externalLink.style.pointerEvents = 'none';
+            }
+        }
+
+                function getMapData(mapName) {
+            // Map of CS:GO/CS2 map names to map data (image URL, Total CS URL, and callouts)
+            const mapDataMap = {
+                'de_dust2': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/dust2_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/dust2',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                },
+                'de_mirage': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/mirage_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/mirage',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' },
+                        { points: '261 650,392 682,373 618,289 600,242 609', name: 'Palace', description: 'Palace area' },
+                        { points: '234 536,184 541,185 608,282 607,275 384,230 385', name: 'T Ramp', description: 'T ramp to mid' },
+                        { points: '301 514,392 522,388 465,295 457', name: 'Mid', description: 'Mid area' },
+                        { points: '370 215,364 395,338 395,342 187,494 193,492 212', name: 'A Ramp', description: 'A ramp' },
+                        { points: '135 378,268 384,264 342,225 343,218 311,133 310', name: 'B Ramp', description: 'B ramp' },
+                        { points: '179 325,216 324,218 303,178 304', name: 'B Apps', description: 'B apartments' }
+                    ]
+                },
+                'de_inferno': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/inferno_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/inferno',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                },
+                'de_cache': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/cache_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/cache',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                },
+                'de_overpass': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/overpass_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/overpass',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                },
+                'de_nuke': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/nuke_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/nuke',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                },
+                'de_ancient': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/ancient_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/ancient',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                },
+                'de_vertigo': {
+                    imageUrl: 'https://static.totalcsgo.com/totalcsgo-strapi/vertigo_11347b32ec.png',
+                    totalCsUrl: 'https://totalcsgo.com/callouts/vertigo',
+                    callouts: [
+                        { points: '357 308,591 305,588 416,443 413,443 392,352 397', name: 'B Site', description: 'Bomb site B' },
+                        { points: '147 264,218 267,223 192,147 192', name: 'T Spawn', description: 'Terrorist spawn area' },
+                        { points: '380 669,490 650,500 580,378 592', name: 'A Site', description: 'Bomb site A' },
+                        { points: '673 468,729 471,738 245,670 243', name: 'CT Spawn', description: 'Counter-Terrorist spawn area' }
+                    ]
+                }
+            };
+
+            return mapDataMap[mapName.toLowerCase()] || null;
+        }
+
+        function generateCalloutPolygons(svgElement, callouts) {
+            // Clear existing polygons
+            svgElement.innerHTML = '';
+
+            // Enable pointer events on the SVG
+            svgElement.style.pointerEvents = 'auto';
+
+            callouts.forEach((callout, index) => {
+                const polygon = document.createElementNS('http://www.w3.org/2000/svg', 'polygon');
+                polygon.setAttribute('points', callout.points);
+                polygon.setAttribute('class', 'callout-polygon');
+                polygon.setAttribute('data-name', callout.name);
+                polygon.setAttribute('data-description', callout.description);
+                polygon.setAttribute('data-index', index);
+
+                // Style the polygon
+                polygon.style.fill = 'rgba(255, 255, 255, 0.1)';
+                polygon.style.stroke = 'rgba(255, 255, 255, 0.3)';
+                polygon.style.strokeWidth = '1';
+                polygon.style.cursor = 'pointer';
+                polygon.style.transition = 'all 0.2s ease';
+
+                // Add hover effects
+                polygon.addEventListener('mouseenter', function(e) {
+                    this.style.fill = 'rgba(255, 255, 255, 0.2)';
+                    this.style.stroke = 'rgba(255, 255, 255, 0.6)';
+                    this.style.strokeWidth = '2';
+                    showCalloutTooltip(e, callout.name, callout.description);
+                });
+
+                polygon.addEventListener('mouseleave', function() {
+                    this.style.fill = 'rgba(255, 255, 255, 0.1)';
+                    this.style.stroke = 'rgba(255, 255, 255, 0.3)';
+                    this.style.strokeWidth = '1';
+                    hideCalloutTooltip();
+                });
+
+                svgElement.appendChild(polygon);
+            });
+        }
+
+        function showCalloutTooltip(event, name, description) {
+            const tooltip = document.getElementById('callout-tooltip');
+            const mapContainer = document.getElementById('interactive-map');
+
+            // Calculate tooltip position
+            const rect = mapContainer.getBoundingClientRect();
+            const x = event.clientX - rect.left;
+            const y = event.clientY - rect.top;
+
+            // Position tooltip above the cursor
+            tooltip.style.left = (x + 10) + 'px';
+            tooltip.style.top = (y - 40) + 'px';
+
+            // Set tooltip content
+            tooltip.innerHTML = `<strong>${name}</strong><br>${description}`;
+            tooltip.style.display = 'block';
+        }
+
+        function hideCalloutTooltip() {
+            const tooltip = document.getElementById('callout-tooltip');
+            tooltip.style.display = 'none';
+        }
 
             // Update session statistics
             document.getElementById('session-duration').textContent = stats.sessionDuration || '00:00:00';
