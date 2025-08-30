@@ -1,0 +1,140 @@
+{
+  "de_dust2": {
+    "displayName": "Dust II",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/dust2_ef3240573c.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/dust2",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_dust2_radar.png",
+    "callouts": [
+      { "points": "535 130,534 340,412 337,412 298,484 300,485 126", "name": "A Site", "description": "Bomb site A" },
+      { "points": "383 688,270 685,39 689,38 780,513 787,509 650,580 648,578 618,453 619", "name": "B Site", "description": "Bomb site B" },
+      { "points": "49 702,124 702,123 562,74 560", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "274 593,273 684,123 687,124 597", "name": "Mid", "description": "Mid area" }
+    ]
+  },
+  "de_mirage": {
+    "displayName": "Mirage",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/mirage_11347b32ec.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/mirage",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_mirage_radar.png",
+    "callouts": [
+      { "points": "357 308,591 305,588 416,443 413,443 392,352 397", "name": "B Site", "description": "Bomb site B" },
+      { "points": "147 264,218 267,223 192,147 192", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "380 669,490 650,500 580,378 592", "name": "A Site", "description": "Bomb site A" },
+      { "points": "673 468,729 471,738 245,670 243", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" },
+      { "points": "261 650,392 682,373 618,289 600,242 609", "name": "Palace", "description": "Palace area" },
+      { "points": "234 536,184 541,185 608,282 607,275 384,230 385", "name": "T Ramp", "description": "T ramp to mid" },
+      { "points": "301 514,392 522,388 465,295 457", "name": "Mid", "description": "Mid area" },
+      { "points": "370 215,364 395,338 395,342 187,494 193,492 212", "name": "A Ramp", "description": "A ramp" },
+      { "points": "135 378,268 384,264 342,225 343,218 311,133 310", "name": "B Ramp", "description": "B ramp" },
+      { "points": "179 325,216 324,218 303,178 304", "name": "B Apps", "description": "B apartments" }
+    ]
+  },
+  "de_inferno": {
+    "displayName": "Inferno",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/inferno_0db58dbab1.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/inferno",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_inferno_radar.png",
+    "callouts": [
+      { "points": "318 404,317 387,394 274,437 277,438 263,487 263,500 330,416 324,380 390,383 427,366 448,342 448", "name": "A Site", "description": "Bomb site A" },
+      { "points": "350 214,425 213,427 135,351 137", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "37 693,235 696,233 482,198 477,42 472", "name": "B Site", "description": "Bomb site B" },
+      { "points": "337 549,540 552,539 505,337 503", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" }
+    ]
+  },
+  "de_cache": {
+    "displayName": "Cache",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/cache_5a5bb344bb.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/cache",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_cache_radar.png",
+    "callouts": [
+      { "points": "236 484,399 487,399 392,235 387", "name": "A Site", "description": "Bomb site A" },
+      { "points": "220 268,353 263,358 170,219 177", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "599 489,529 486,526 377,611 377,609 402,755 402,755 529,600 530", "name": "B Site", "description": "Bomb site B" },
+      { "points": "403 230,426 232,428 343,438 389,542 393,536 321,477 317,479 170,400 173", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" }
+    ]
+  },
+  "de_overpass": {
+    "displayName": "Overpass",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/overpass_9132996be5.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/overpass",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_overpass_radar.png",
+    "callouts": [
+      { "points": "334 176,412 210,458 170,359 125", "name": "A Site", "description": "Bomb site A" },
+      { "points": "514 798,624 691,571 645,459 753", "name": "B Site", "description": "Bomb site B" },
+      { "points": "125 525,125 311,208 265,257 170,292 187,244 274,242 324,195 329,194 418,217 420,216 570,244 625,189 648", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "468 601,621 606,623 577,464 579", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" }
+    ]
+  },
+  "de_nuke": {
+    "displayName": "Nuke",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/nuke_1ddbc08495.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/nuke",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_nuke_radar.png",
+    "callouts": [
+      { "points": "54 466,294 475,297 418,107 418,109 387,55 385", "name": "A Site", "description": "Bomb site A" },
+      { "points": "569 356,568 402,734 402,736 441,776 441,777 353,609 354", "name": "B Site", "description": "Bomb site B" },
+      { "points": "369 566,474 601,557 596,553 499,609 502,608 455,568 460,568 416,501 415,500 494,483 495,484 522,440 522,441 494,419 495", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" },
+      { "points": "190 137,192 257,117 255,116 134", "name": "T Spawn", "description": "Terrorist spawn area" }
+    ]
+  },
+  "de_ancient": {
+    "displayName": "Ancient",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/ancient_e1cd37a9c9.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/ancient",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_ancient_radar.png",
+    "callouts": [
+      { "points": "404,728,426,725,426,656,343,655,346,713,362,723", "name": "A Site", "description": "Bomb site A" },
+      { "points": "427,616,427,633,538,633,538,616", "name": "Mid", "description": "Mid area" },
+      { "points": "538,673,577,671,577,597,582,588,538,590", "name": "B Site", "description": "Bomb site B" },
+      { "points": "537,563,537,591,584,588,588,575,655,575,657,502,607,500,605,529,571,562", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" },
+      { "points": "219,501,188,530,213,578,287,602,288,567,287,503", "name": "T Spawn", "description": "Terrorist spawn area" }
+    ]
+  },
+  "de_vertigo": {
+    "displayName": "Vertigo",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/vertigo_3cbf64fa88.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/vertigo",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_vertigo_radar.png",
+    "callouts": [
+      { "points": "382,208,428,210,425,241,382,241", "name": "A Site", "description": "Bomb site A" },
+      { "points": "382,205,385,273,442,275,442,238,422,239,421,255,407,255,406,205", "name": "Mid", "description": "Mid area" },
+      { "points": "616,302,616,346,659,346,656,303", "name": "B Site", "description": "Bomb site B" },
+      { "points": "58,357,67,348,116,349,116,363,104,363,72,392,72,403,58,402", "name": "T Spawn", "description": "Terrorist spawn area" }
+    ]
+  },
+  "de_cobblestone": {
+    "displayName": "Cobblestone",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/cobblestone_85b0d69929.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/cobblestone",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_cobblestone_radar.png",
+    "callouts": [
+      { "points": "300,300,400,300,400,400,300,400", "name": "A Site", "description": "Bomb site A" },
+      { "points": "500,500,600,500,600,600,500,600", "name": "B Site", "description": "Bomb site B" },
+      { "points": "200,200,300,200,300,300,200,300", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "600,200,700,200,700,300,600,300", "name": "CT Spawn", "description": "Counter-Terrorist spawn area" }
+    ]
+  },
+  "de_train": {
+    "displayName": "Train",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/train_5e06a21f04.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/train",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_train_radar.png",
+    "callouts": [
+      { "points": "29 218,274 211,276 142,29 150", "name": "T Spawn", "description": "Terrorist spawn area" },
+      { "points": "261 216,261 352,331 354,330 216", "name": "Mid", "description": "Mid area" },
+      { "points": "569 668,650 671,648 576,569 576", "name": "A Site", "description": "Bomb site A" },
+      { "points": "647 667,757 670,755 532,651 534", "name": "B Site", "description": "Bomb site B" }
+    ]
+  },
+  "de_anubis": {
+    "displayName": "Anubis",
+    "imageUrl": "https://static.totalcsgo.com/totalcsgo-strapi/de_anubis_radar_annotated_5976c09e20.png",
+    "totalCsUrl": "https://totalcsgo.com/callouts/anubis",
+    "fallbackUrl": "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_anubis_radar.png",
+    "callouts": [
+      { "points": "284.375,703.90625,285.9375,670.3125,290.625,675.78125,309.375,657.03125,316.40625,660.9375,332.03125,660.9375,332.8125,678.90625,335.9375,698.4375,342.96875,696.875,353.125,696.875,363.28125,700,364.0625,690.625,407.03125,689.0625,406.25,664.84375,417.96875,665.625,417.1875,669.53125,439.84375,670.3125,438.28125,678.125,477.34375,679.6875,476.5625,685.9375,481.25,685.15625,482.03125,678.90625,521.875,685.9375,522.65625,717.96875,506.25,735.9375,487.5,758.59375,457.03125,758.59375,454.6875,768.75,449.21875,768.75,442.96875,760.9375,428.90625,764.84375,426.5625,757.8125,339.84375,759.375", "name": "A Site", "description": "Bomb site A" },
+      { "points": "435.15625,572.65625,470.3125,542.96875,473.4375,548.4375,475,575.78125,525.78125,575,541.40625,558.59375,565.625,577.34375,546.875,596.09375,546.875,613.28125,522.65625,615.625,522.65625,661.71875,531.25,661.71875,531.25,686.71875,521.875,684.375,485.15625,678.90625,483.59375,631.25,481.25,607.03125,446.09375,607.8125,446.09375,584.375", "name": "B Site", "description": "Bomb site B" },
+      { "points": "194.53125,523.4375,223.4375,523.4375,224.21875,544.53125,264.84375,585.15625,281.25,568.75,296.09375,584.375,304.6875,575.78125,303.125,571.09375,328.90625,548.4375,338.28125,547.65625,355.46875,565.625,337.5,586.71875,292.1875,632.03125,270.3125,654.6875,284.375,668.75,283.59375,703.125,275,703.125,241.40625,668.75,246.875,660.15625,230.46875,644.53125,258.59375,614.0625,218.75,575,195.3125,550", "name": "T Spawn", "description": "Terrorist spawn area" }
+    ]
+  }
+}
