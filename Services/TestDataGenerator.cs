@@ -137,22 +137,7 @@ public class TestDataGenerator
                     }
                 }
             },
-            ""bomb"": {
-                ""state"": ""carried"",
-                ""countdown"": ""0.0""
-            },
-            ""grenades"": {
-                ""hegrenade"": {
-                    ""owner"": ""76561198012345678"",
-                    ""position"": ""0.0, 0.0, 0.0"",
-                    ""velocity"": ""0.0, 0.0, 0.0"",
-                    ""lifetime"": ""0.0"",
-                    ""type"": ""weapon_hegrenade""
-                }
-            },
-            ""phase_countdowns"": {
-                ""phase_ends_in"": ""3""
-            }
+
         }";
 
         try
@@ -277,7 +262,7 @@ public class TestDataGenerator
             _ => "freezetime"
         };
 
-        // Bomb state is not available to players in competitive games
+
 
         return $@"{{
             ""map"": {{
@@ -322,10 +307,7 @@ public class TestDataGenerator
                     }}
                 }}
             }},
-            ""bomb"": {{
-                ""state"": ""unknown"",
-                ""countdown"": ""0.0""
-            }},
+
 
         }}";
     }

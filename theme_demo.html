@@ -171,17 +171,7 @@
             box-shadow: 0 0 30px #DC143C, 0 0 60px rgba(220, 20, 60, 0.5);
         }
 
-        .game-state-banner.bomb-planted {
-            background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
-            box-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255, 215, 0, 0.5);
-            animation: bombPlantedPulse 1s ease-in-out infinite;
-        }
 
-        .game-state-banner.bomb-exploded {
-            background: linear-gradient(90deg, #FF4500, #FF0000, #FF4500);
-            box-shadow: 0 0 40px #FF4500, 0 0 80px rgba(255, 69, 0, 0.7);
-            animation: bombExplosion 0.5s ease-out;
-        }
 
         /* Apply states to top banner only */
         .game-state-banner.freezetime {
@@ -199,30 +189,7 @@
             box-shadow: 0 0 30px #DC143C, 0 0 60px rgba(220, 20, 60, 0.5);
         }
 
-        .game-state-banner.bomb-planted {
-            background: linear-gradient(90deg, #FFD700, #FFA500, #FFD700);
-            box-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255, 215, 0, 0.5);
-        }
 
-        .game-state-banner.bomb-exploded {
-            background: linear-gradient(90deg, #FF4500, #FF0000, #FF4500);
-            box-shadow: 0 0 40px #FF4500, 0 0 80px rgba(255, 69, 0, 0.7);
-            animation: bombExplosion 0.5s ease-out;
-        }
-
-                .game-state-banner.bomb-exploded::after {
-            content: '';
-            position: absolute;
-            top: 0;
-            left: 0;
-            right: 0;
-            bottom: 0;
-            background:
-                radial-gradient(circle at 20% 50%, rgba(255, 255, 0, 0.8) 0%, transparent 50%),
-                radial-gradient(circle at 80% 50%, rgba(255, 69, 0, 0.8) 0%, transparent 50%),
-                radial-gradient(circle at 50% 50%, rgba(255, 215, 0, 0.6) 0%, transparent 50%);
-            animation: fireFlicker 0.1s infinite alternate;
-        }
 
 
 
@@ -234,29 +201,7 @@
 
 
 
-        @keyframes bombPlantedPulse {
-            0%, 100% {
-                box-shadow: 0 0 30px #FFD700, 0 0 60px rgba(255, 215, 0, 0.5);
-            }
-            50% {
-                box-shadow: 0 0 40px #FFD700, 0 0 80px rgba(255, 215, 0, 0.7);
-            }
-        }
 
-        @keyframes bombExplosion {
-            0% {
-                transform: scaleY(1);
-                box-shadow: 0 0 20px #FF4500;
-            }
-            50% {
-                transform: scaleY(2);
-                box-shadow: 0 0 60px #FF4500, 0 0 120px rgba(255, 69, 0, 0.8);
-            }
-            100% {
-                transform: scaleY(1);
-                box-shadow: 0 0 40px #FF4500, 0 0 80px rgba(255, 69, 0, 0.7);
-            }
-        }
 
         @keyframes fireFlicker {
             0% { opacity: 0.8; }
@@ -299,86 +244,7 @@
             }
         }
 
-        /* Bomb Timer Box - Styled like theme box */
-        .bomb-overlay {
-            display: none;
-            margin-left: 1rem;
-            vertical-align: top;
-            margin-top: 1rem;
-        }
 
-        .bomb-timer {
-            background: rgba(255, 255, 255, 0.1);
-            border-radius: 8px;
-            padding: 0.5rem 1rem;
-            min-width: 200px;
-            border: 1px solid rgba(255, 255, 255, 0.2);
-            display: flex;
-            align-items: center;
-            gap: 0.75rem;
-        }
-
-        .bomb-icon {
-            font-size: 1.5rem;
-            color: #FFD700;
-            text-shadow: 0 0 10px #FFD700;
-            animation: bombIconPulse 1s ease-in-out infinite;
-            flex-shrink: 0;
-        }
-
-        .bomb-timer-content {
-            flex: 1;
-            text-align: center;
-        }
-
-        .bomb-timer-text {
-            color: #FFD700;
-            font-size: 1.2rem;
-            font-weight: bold;
-            margin-bottom: 0.5rem;
-            display: block;
-        }
-
-        .bomb-progress-bar {
-            width: 100%;
-            height: 8px;
-            background: rgba(255, 255, 255, 0.2);
-            border-radius: 4px;
-            overflow: hidden;
-            position: relative;
-        }
-
-        .bomb-progress-fill {
-            height: 100%;
-            background: linear-gradient(90deg, #FFD700, #FFA500);
-            transition: width 0.1s linear;
-            border-radius: 4px;
-        }
-
-        .bomb-progress-fill.critical {
-            background: linear-gradient(90deg, #FF4500, #FF0000);
-            animation: criticalPulse 0.5s ease-in-out infinite;
-        }
-
-        @keyframes bombIconPulse {
-            0%, 100% {
-                transform: scale(1);
-                text-shadow: 0 0 20px #FFD700;
-            }
-            50% {
-                transform: scale(1.1);
-                text-shadow: 0 0 30px #FFD700, 0 0 40px rgba(255, 215, 0, 0.5);
-            }
-        }
-
-        @keyframes criticalPulse {
-            0%, 100% {
-                box-shadow: 0 0 20px #FF4500;
-            }
-            50% {
-                box-shadow: 0 0 40px #FF4500, 0 0 60px rgba(255, 69, 0, 0.7);
-            }
-        }
     </style>
 </head>
 <body>
@@ -393,18 +259,7 @@
             <span class="theme-description" id="theme-description">CS:GO Dashboard</span>
         </div>
 
-        <!-- Bomb Timer Box -->
-        <div class="bomb-overlay" id="bomb-overlay">
-            <div class="bomb-timer">
-                <div class="bomb-icon">💣</div>
-                <div class="bomb-timer-content">
-                    <div class="bomb-timer-text" id="bomb-timer-text">40</div>
-                    <div class="bomb-progress-bar">
-                        <div class="bomb-progress-fill" id="bomb-progress-fill"></div>
-                    </div>
-                </div>
-            </div>
-        </div>
+
     </div>
 
     <div class="theme-selector">
@@ -442,8 +297,7 @@
             <button class="theme-btn" onclick="setGameState('freezetime')">Freezetime</button>
             <button class="theme-btn" onclick="setGameState('round-won')">Round Won</button>
             <button class="theme-btn" onclick="setGameState('round-lost')">Round Lost</button>
-            <button class="theme-btn" onclick="setGameState('bomb-planted')">Bomb Planted</button>
-            <button class="theme-btn" onclick="setGameState('bomb-exploded')">Bomb Exploded</button>
+
         </div>
         <div style="margin-top: 1rem; padding: 1rem; background: rgba(255, 255, 255, 0.1); border-radius: 8px;">
             <strong>Current State:</strong> <span id="current-game-state">Default</span>
@@ -454,8 +308,7 @@
         // Game State Banner Control
         const gameStateBanner = document.querySelector('.game-state-banner');
         let currentGameState = 'default';
-        let bombTimer = null;
-        let bombCountdown = 40;
+
 
                         function setGameState(state) {
             // Only handle top banner
@@ -472,90 +325,14 @@
             currentGameState = state;
             document.getElementById('current-game-state').textContent = state.charAt(0).toUpperCase() + state.slice(1).replace('-', ' ');
 
-            // Special handling for bomb planted state - only start if no timer is active
-            if (state === 'bomb-planted' && !bombTimer) {
-                startBombCountdown();
-            }
 
-            // Special handling for bomb explosion
-            if (state === 'bomb-exploded') {
-                stopBombCountdown();
-                // Reset explosion animation after it completes
-                setTimeout(() => {
-                    if (currentGameState === 'bomb-exploded') {
-                        banner.style.animation = 'none';
-                        banner.offsetHeight; // Trigger reflow
-                        banner.style.animation = 'bombExplosion 0.5s ease-out';
-                    }
-                }, 500);
-            }
         }
 
-                        // Bomb countdown functions
-        function startBombCountdown() {
-            // Prevent starting if timer is already active
-            if (bombTimer) {
-                return;
-            }
 
-            bombCountdown = 40;
-            const bombOverlay = document.getElementById('bomb-overlay');
-            const bombTimerText = document.getElementById('bomb-timer-text');
-            const bombProgressFill = document.getElementById('bomb-progress-fill');
-
-            // Reset progress bar
-            bombProgressFill.style.width = '100%';
-            bombProgressFill.classList.remove('critical');
-            bombTimerText.style.color = '#FFD700';
-
-            bombOverlay.style.display = 'inline-block';
-
-            bombTimer = setInterval(() => {
-                bombCountdown--;
-                bombTimerText.textContent = bombCountdown;
-
-                // Update progress bar
-                const progressPercent = (bombCountdown / 40) * 100;
-                bombProgressFill.style.width = progressPercent + '%';
-
-                // Critical phase (last 10 seconds)
-                if (bombCountdown <= 10) {
-                    bombProgressFill.classList.add('critical');
-                    bombTimerText.style.color = '#FF4500';
-                } else {
-                    bombProgressFill.classList.remove('critical');
-                    bombTimerText.style.color = '#FFD700';
-                }
-
-                if (bombCountdown <= 0) {
-                    clearInterval(bombTimer);
-                    bombTimer = null;
-                    bombOverlay.style.display = 'none';
-                    setGameState('bomb-exploded');
-                }
-            }, 1000);
-        }
-
-        function stopBombCountdown() {
-            if (bombTimer) {
-                clearInterval(bombTimer);
-                bombTimer = null;
-            }
-            document.getElementById('bomb-overlay').style.display = 'none';
-            bombCountdown = 40;
-
-            // Reset progress bar
-            const bombProgressFill = document.getElementById('bomb-progress-fill');
-            const bombTimerText = document.getElementById('bomb-timer-text');
-            bombProgressFill.style.width = '100%';
-            bombProgressFill.classList.remove('critical');
-            bombTimerText.style.color = '#FFD700';
-            bombTimerText.textContent = '40';
-        }
 
         // Simulate real-time game state changes (for demo purposes)
         function simulateGameEvents() {
-            const states = ['default', 'freezetime', 'round-won', 'round-lost', 'bomb-planted', 'bomb-exploded'];
+            const states = ['default', 'freezetime', 'round-won', 'round-lost'];
             let currentIndex = 0;
 
             setInterval(() => {
@@ -587,16 +364,7 @@
                 return;
             }
 
-            // Check bomb state
-            if (gameStateData.BombState === 'Planted') {
-                setGameState('bomb-planted');
-                return;
-            }
 
-            if (gameStateData.BombState === 'Exploded') {
-                setGameState('bomb-exploded');
-                return;
-            }
 
             // Check game phase
             if (gameStateData.CurrentPhase === 'Freezetime') {

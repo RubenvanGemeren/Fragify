@@ -105,12 +105,10 @@ async function updateTheme(mapName) {
 // Update map info display
 async function updateMapInfo(gameMapName) {
     const currentGameMapSpan = document.getElementById('current-game-map');
-    const mapNameDisplay = document.getElementById('map-name-display');
     const mapDisplay = document.getElementById('map-display');
 
     if (gameMapName && gameMapName !== 'Unknown') {
         currentGameMapSpan.textContent = gameMapName;
-        mapNameDisplay.textContent = gameMapName;
 
         // Update map display to show map info
         mapDisplay.innerHTML = `
@@ -128,7 +126,6 @@ async function updateMapInfo(gameMapName) {
         await updateTheme(gameMapName);
     } else {
         currentGameMapSpan.textContent = 'Unknown';
-        mapNameDisplay.textContent = 'No map selected';
 
         // Show placeholder when no map is active
         mapDisplay.innerHTML = `
@@ -148,25 +145,12 @@ async function updateDashboard(stats) {
     document.getElementById('round-phase').textContent = stats.roundPhase || 'Unknown';
     document.getElementById('score').textContent = `${stats.scoreT || 0} - ${stats.scoreCT || 0}`;
 
-    // Update bomb state
-    const bombStateElement = document.getElementById('bomb-state');
-    if (bombStateElement) {
-        if (stats.bombState) {
-            bombStateElement.textContent = stats.bombState;
-            // Add visual styling based on bomb state
-            bombStateElement.className = 'stat-value bomb-state-' + stats.bombState.toLowerCase().replace(/\s+/g, '-');
-        } else {
-            bombStateElement.textContent = 'Unknown';
-            bombStateElement.className = 'stat-value';
-        }
-    }
+
 
     // Update map info
     await updateMapInfo(stats.mapName);
 
-    // Update map info details
-    document.getElementById('game-mode-display').textContent = stats.gameMode || 'Unknown';
-    document.getElementById('round-phase-display').textContent = stats.roundPhase || 'Unknown';
+
 
     // Update player statistics
     document.getElementById('player-kills').textContent = stats.playerKills || 0;

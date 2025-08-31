@@ -1,47 +1,38 @@
+using System;
+
 namespace FragifyTracker.Models;
 
 public class GameStateInfo
 {
-    public string CurrentPhase { get; set; } = "Unknown";
-    public string BombState { get; set; } = "None";
-    public DateTime? BombPlantedTime { get; set; }
-    public int BombTimeRemaining { get; set; } = 0;
-    public bool IsRoundWon { get; set; } = false;
-    public bool IsRoundLost { get; set; } = false;
-    public string RoundResult { get; set; } = "Unknown";
+    // Map Information
+    public string MapName { get; set; } = string.Empty;
+    public string GameMode { get; set; } = string.Empty;
+    public string RoundPhase { get; set; } = string.Empty;
+    public int RoundNumber { get; set; } = 0;
+    public int ScoreT { get; set; } = 0;
+    public int ScoreCT { get; set; } = 0;
 
-    // Visual effect states
-    public string BorderColor { get; set; } = "#4A90E2";
-    public string BorderEffect { get; set; } = "None";
-    public bool ShowBombTimer { get; set; } = false;
-    public bool ShowBombIcon { get; set; } = false;
-    public string BombIconColor { get; set; } = "#FF0000";
-}
+    // Player Information
+    public string PlayerName { get; set; } = string.Empty;
+    public string PlayerTeam { get; set; } = string.Empty;
+    public int PlayerHealth { get; set; } = 100;
+    public int PlayerArmor { get; set; } = 100;
+    public int PlayerMoney { get; set; } = 800;
+    public string ActiveWeapon { get; set; } = string.Empty;
 
-public enum GamePhase
-{
-    Unknown,
-    Warmup,
-    Freezetime,
-    Live,
-    Over,
-    Intermission
-}
+    // Session Information
+    public string SessionDuration { get; set; } = "00:00:00";
+    public int TotalRounds { get; set; } = 0;
+    public int RoundsWon { get; set; } = 0;
+    public int RoundsLost { get; set; } = 0;
+    public double WinRate { get; set; } = 0.0;
 
-public enum BombState
-{
-    None,
-    Carried,
-    Dropped,
-    Planted,
-    Defused,
-    Exploded
-}
+    // Connection Status
+    public bool IsConnected { get; set; } = false;
+    public DateTime? LastMessageTime { get; set; }
+    public int MessagesReceived { get; set; } = 0;
 
-public enum RoundResult
-{
-    Unknown,
-    Won,
-    Lost,
-    Draw
+    // UI State
+    public bool IsUpdating { get; set; } = false;
+    public string LastUpdateTime { get; set; } = string.Empty;
 }

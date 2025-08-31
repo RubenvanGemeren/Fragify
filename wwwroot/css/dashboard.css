@@ -260,21 +260,4 @@ body {
     font-weight: bold;
 }
 
-/* Bomb state styling for dashboard */
-.bomb-state-planted {
-    color: #ef4444 !important;
-    text-shadow: 0 0 10px rgba(239, 68, 68, 0.5);
-    font-weight: bold;
-}
 
-.bomb-state-defused {
-    color: #10b981 !important;
-    text-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
-    font-weight: bold;
-}
-
-.bomb-state-exploded {
-    color: #f59e0b !important;
-    text-shadow: 0 0 10px rgba(245, 158, 11, 0.5);
-    font-weight: bold;
-}

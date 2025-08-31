@@ -117,38 +117,7 @@ function parseEvents(rawData) {
             });
         }
 
-        // Bomb events
-        if (gameState.bomb) {
-            const bombState = gameState.bomb.state;
-            let bombEvent = 'BombUpdated';
 
-            // Determine specific bomb event based on state
-            switch (bombState) {
-                case 'planted':
-                    bombEvent = 'BombPlanted';
-                    break;
-                case 'defused':
-                    bombEvent = 'BombDefused';
-                    break;
-                case 'exploded':
-                    bombEvent = 'BombExploded';
-                    break;
-                case 'carried':
-                    bombEvent = 'BombCarried';
-                    break;
-                case 'dropped':
-                    bombEvent = 'BombDropped';
-                    break;
-            }
-
-            events.push({
-                type: 'bomb',
-                category: 'Bomb',
-                event: bombEvent,
-                data: gameState.bomb,
-                timestamp: timestamp
-            });
-        }
 
         // Grenade events
         if (gameState.grenades) {

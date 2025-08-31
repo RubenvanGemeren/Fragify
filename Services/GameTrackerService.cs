@@ -60,9 +60,7 @@ public class GameTrackerService
             _currentStats.RoundNumber = 0; // TODO: Fix for new library structure - gameState.Map.Round;
             _currentStats.RoundTime = 0; // TODO: Calculate from phase countdowns
 
-            // Note: Bomb state is not available to players in competitive games
-            // Only available to spectators, so we'll set it to "Unknown"
-            _currentStats.BombState = "Unknown";
+
 
             if (gameState.Player != null)
             {
@@ -200,7 +198,7 @@ public class GameTrackerService
     private void UpdateGameStateInfo(string phase)
     {
         _gameStateInfo.CurrentPhase = phase;
-        _gameStateInfo.BombState = "N/A"; // Bomb state is not available to players
+
 
         // Update visual effects based on game state
         switch (phase)
@@ -218,12 +216,7 @@ public class GameTrackerService
                 break;
         }
 
-        // Bomb state visual effects are removed as bomb state is not available to players
-        _gameStateInfo.ShowBombIcon = false;
-        _gameStateInfo.ShowBombTimer = false;
-        _gameStateInfo.BombIconColor = "#000000"; // Default color
-        _gameStateInfo.BombTimeRemaining = 0;
-        _gameStateInfo.BombPlantedTime = null;
+
     }
 
     public void OnRoundBegin()
@@ -338,7 +331,7 @@ public class GameTrackerService
             RoundNumber = _currentStats.TotalRounds,
             Winner = winningTeam,
             EndTime = DateTime.Now,
-            WinCondition = "Bomb"
+                            WinCondition = "Elimination"
         };
 
         _sessionManager.AddRoundData(roundData);

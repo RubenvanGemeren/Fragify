@@ -44,7 +44,7 @@
                 <div class="summary-grid">
                     <div class="summary-item">
                         <label>Raw Data Events:</label>
-                        <span id="bomb-events-count">0</span>
+                        <span id="raw-events-count">0</span>
                     </div>
                     <div class="summary-item">
                         <label>JSON Events:</label>
@@ -74,7 +74,7 @@
                 <div class="event-tabs">
                     <button class="tab-btn active" onclick="showTab('raw')">Raw GSI Data</button>
                     <button class="tab-btn" onclick="showTab('events')">Parsed Events</button>
-                    <button class="tab-btn" onclick="showTab('bomb')">Bomb Events</button>
+
                     <button class="tab-btn" onclick="showTab('rounds')">Round Events</button>
                     <button class="tab-btn" onclick="showTab('players')">Player Events</button>
                     <button class="tab-btn" onclick="showTab('maps')">Map Events</button>
@@ -98,12 +98,7 @@
                     </div>
                 </div>
 
-                <div id="bomb-tab" class="tab-content">
-                    <h3>💣 Bomb Events</h3>
-                    <div id="bomb-events-content" class="code-block">
-                        <em>No bomb events yet...</em>
-                    </div>
-                </div>
+
 
                 <div id="rounds-tab" class="tab-content">
                     <h3>🎮 Round Events</h3>

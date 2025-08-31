@@ -110,7 +110,7 @@ public class CliInterface : IUserInterface
                oldStats.PlayerScore != newStats.PlayerScore ||
                oldStats.ScoreT != newStats.ScoreT ||
                oldStats.ScoreCT != newStats.ScoreCT ||
-               oldStats.BombState != newStats.BombState ||
+
                oldStats.RoundNumber != newStats.RoundNumber ||
                oldStats.RoundTime != newStats.RoundTime ||
                oldStats.SessionDuration != newStats.SessionDuration ||
