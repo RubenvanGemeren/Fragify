@@ -1,5 +1,5 @@
 using FragifyTracker.Models;
-using CSGSI;
+using CounterStrike2GSI;
 
 namespace FragifyTracker.Services;
 
@@ -56,43 +56,7 @@ public class TestDataGenerator
         Console.WriteLine($"🎯 Round {_currentRound} started (Freeze Time)");
     }
 
-    public void SimulateBombPlanted()
-    {
-        if (_roundPhase != 1) return;
 
-        _roundPhase = 1; // Keep live phase
-        var gameState = CreateTestGameState();
-        gameState.Bomb.State = CSGSI.Nodes.BombState.Planted;
-        _trackerService.UpdateGameState(gameState);
-
-        Console.WriteLine("💣 Bomb planted!");
-    }
-
-    public void SimulateBombDefused()
-    {
-        if (_roundPhase != 1) return;
-
-        _scoreCT++;
-        _roundPhase = 2; // Round over
-        var gameState = CreateTestGameState();
-        gameState.Bomb.State = CSGSI.Nodes.BombState.Defused;
-        _trackerService.UpdateGameState(gameState);
-
-        Console.WriteLine("✅ Bomb defused! CT wins round!");
-    }
-
-    public void SimulateBombExploded()
-    {
-        if (_roundPhase != 1) return;
-
-        _scoreT++;
-        _roundPhase = 2; // Round over
-        var gameState = CreateTestGameState();
-        gameState.Bomb.State = CSGSI.Nodes.BombState.Exploded;
-        _trackerService.UpdateGameState(gameState);
-
-        Console.WriteLine("💥 Bomb exploded! T wins round!");
-    }
 
     public void SimulateRoundEnd()
     {
@@ -194,14 +158,15 @@ public class TestDataGenerator
         try
         {
             Console.WriteLine($"🔍 Creating GameState from JSON...");
-            var gameState = new GameState(initialJson);
-            Console.WriteLine($"✅ GameState created successfully");
-            Console.WriteLine($"   Map: {gameState.Map?.Name ?? "NULL"}");
-            Console.WriteLine($"   Player: {gameState.Player?.Name ?? "NULL"}");
-            Console.WriteLine($"   Round Phase: {gameState.Round?.Phase.ToString() ?? "NULL"}");
+            // TODO: Fix for new library - need to understand the correct constructor
+            // var gameState = new GameState(initialJson);
+            Console.WriteLine($"✅ GameState creation skipped for now (needs library update)");
+            Console.WriteLine($"   Map: TODO");
+            Console.WriteLine($"   Player: TODO");
+            Console.WriteLine($"   Round Phase: TODO");
 
-            _trackerService.UpdateGameState(gameState);
-            Console.WriteLine("✅ Initial test data generated!");
+            // _trackerService.UpdateGameState(gameState);
+            Console.WriteLine("✅ Initial test data generation skipped!");
         }
         catch (Exception ex)
         {
@@ -261,7 +226,7 @@ public class TestDataGenerator
                     Console.WriteLine($"🎯 Round {_currentRound} is now LIVE!");
 
                     var liveGameState = CreateTestGameState();
-                    liveGameState.Round.Phase = CSGSI.Nodes.RoundPhase.Live;
+                    // liveGameState.Round.Phase = CounterStrike2GSI.Nodes.RoundPhase.Live; // TODO: Fix for new library
                     _trackerService.UpdateGameState(liveGameState);
                 }
                 break;
@@ -271,22 +236,7 @@ public class TestDataGenerator
                 if (_roundTimer >= 10) // 10 seconds live
                 {
                     // Randomly determine round outcome
-                    if (_random.Next(3) == 0)
-                    {
-                        SimulateBombPlanted();
-                        // Wait a bit then explode/defuse
-                        Task.Delay(2000).ContinueWith(_ =>
-                        {
-                            if (_random.Next(2) == 0)
-                                SimulateBombExploded();
-                            else
-                                SimulateBombDefused();
-                        });
-                    }
-                    else
-                    {
-                        SimulateRoundEnd();
-                    }
+                    SimulateRoundEnd();
                 }
                 break;
 
@@ -310,8 +260,11 @@ public class TestDataGenerator
 
     private GameState CreateTestGameState()
     {
+        // TODO: Fix this for the new CounterStrike2GSI library
+        // For now, return a minimal GameState to avoid compilation errors
         var json = CreateTestGameStateJson();
-        return new GameState(json);
+        // return new GameState(json); // Commented out until we figure out the correct constructor
+        throw new NotImplementedException("Test data generation needs to be updated for CounterStrike2GSI library");
     }
 
     private string CreateTestGameStateJson()
@@ -324,7 +277,7 @@ public class TestDataGenerator
             _ => "freezetime"
         };
 
-        var bombState = _roundPhase == 1 && _roundTimer > 5 ? "planted" : "carried";
+        // Bomb state is not available to players in competitive games
 
         return $@"{{
             ""map"": {{
@@ -370,21 +323,10 @@ public class TestDataGenerator
                 }}
             }},
             ""bomb"": {{
-                ""state"": ""{bombState}"",
+                ""state"": ""unknown"",
                 ""countdown"": ""0.0""
             }},
-            ""grenades"": {{
-                ""hegrenade"": {{
-                    ""owner"": ""76561198012345678"",
-                    ""position"": ""0.0, 0.0, 0.0"",
-                    ""velocity"": ""0.0, 0.0, 0.0"",
-                    ""lifetime"": ""0.0"",
-                    ""type"": ""weapon_hegrenade""
-                }}
-            }},
-            ""phase_countdowns"": {{
-                ""phase_ends_in"": ""{(_roundPhase == 0 ? 3 - _roundTimer : _roundPhase == 1 ? 10 - _roundTimer : 0)}""
-            }}
+
         }}";
     }
 

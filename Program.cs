@@ -1,4 +1,4 @@
-using CSGSI;
+using CounterStrike2GSI;
 using FragifyTracker.Services;
 using FragifyTracker.UI;
 using Spectre.Console;
@@ -32,7 +32,7 @@ class Program
             _userInterface = UIFactory.CreateInterface(uiType, webPort);
             _userInterface.Initialize();
 
-            AnsiConsole.MarkupLine($"[bold green]🎯 Fragify - CS:GO Live Tracker[/]");
+            AnsiConsole.MarkupLine($"[bold green]🎯 Fragify - CS2 Live Tracker[/]");
             AnsiConsole.MarkupLine($"[bold blue]UI Mode: {uiType.ToUpper()}[/]");
 
             if (uiType == "web")
@@ -46,27 +46,36 @@ class Program
             // Initialize game tracker
             InitializeGameTracker();
 
-            // Set up event handlers
+            // Set up event handlers for the new library
             if (_listener != null)
             {
+                // Main game state event - this is the only reliable event for players
                 _listener.NewGameState += OnNewGameState;
             }
 
             // Start listening
             if (_listener != null)
             {
-                _listener.Start();
-                AnsiConsole.MarkupLine("[bold green]✅ Game State Listener started![/]");
+                if (_listener.Start())
+                {
+                    AnsiConsole.MarkupLine("[bold green]✅ CS2 Game State Listener started on port 3000![/]");
+                    AnsiConsole.MarkupLine("[bold yellow]💡 Make sure your CS2 GSI config points to http://localhost:3000[/]");
+                }
+                else
+                {
+                    AnsiConsole.MarkupLine("[bold red]❌ Failed to start Game State Listener![/]");
+                    AnsiConsole.MarkupLine("[dim]Check if port 3000 is available and you have sufficient permissions[/]");
+                    return;
+                }
             }
 
             if (_testMode)
             {
                 AnsiConsole.MarkupLine("[bold yellow]🧪 Test Mode Enabled[/]");
                 AnsiConsole.MarkupLine("[dim]Test Commands:[/]");
-                AnsiConsole.MarkupLine("[dim]  1 - Start Round    2 - Plant Bomb    3 - Defuse Bomb[/]");
-                AnsiConsole.MarkupLine("[dim]  4 - End Round      5 - Flash Player  6 - Toggle Auto[/]");
-                AnsiConsole.MarkupLine("[dim]  7 - Full Game      8 - Next Round    9 - Game Status[/]");
-                AnsiConsole.MarkupLine("[dim]  0 - Reset Game     r - Reset Session[/]");
+                AnsiConsole.MarkupLine("[dim]  1 - Start Round    2 - End Round    3 - Flash Player[/]");
+                AnsiConsole.MarkupLine("[dim]  4 - Toggle Auto    5 - Full Game    6 - Next Round[/]");
+                AnsiConsole.MarkupLine("[dim]  7 - Game Status   0 - Reset Game   r - Reset Session[/]");
 
                 // Generate initial test data to show something in the UI
                 AnsiConsole.MarkupLine("[dim]Generating initial test data...[/]");
@@ -126,6 +135,7 @@ class Program
                 _testDataGenerator = new TestDataGenerator(_trackerService);
             }
 
+            // Create the new GameStateListener
             _listener = new GameStateListener(3000);
             AnsiConsole.MarkupLine("[bold green]✅ Game Tracker initialized![/]");
         }
@@ -136,6 +146,7 @@ class Program
         }
     }
 
+    // Main game state event handler
     private static void OnNewGameState(GameState gameState)
     {
         try
@@ -144,7 +155,7 @@ class Program
 
             if (!_testMode)
             {
-                AnsiConsole.MarkupLine("[bold green]🎯 Received message from CS:GO![/]");
+                AnsiConsole.MarkupLine($"[bold green]🎯 Received CS2 game state - Map: {gameState.Map.Name}, Phase: {gameState.Round.Phase}[/]");
             }
         }
         catch (Exception ex)
@@ -196,34 +207,26 @@ class Program
                     AnsiConsole.MarkupLine("[bold green]🎯 Test: Round Started![/]");
                     break;
                 case '2':
-                    _testDataGenerator?.SimulateBombPlanted();
-                    AnsiConsole.MarkupLine("[bold yellow]💣 Test: Bomb Planted![/]");
-                    break;
-                case '3':
-                    _testDataGenerator?.SimulateBombDefused();
-                    AnsiConsole.MarkupLine("[bold green]✅ Test: Bomb Defused![/]");
-                    break;
-                case '4':
                     _testDataGenerator?.SimulateRoundEnd();
                     AnsiConsole.MarkupLine("[bold red]🏁 Test: Round Ended![/]");
                     break;
-                case '5':
+                case '3':
                     _testDataGenerator?.SimulatePlayerFlash();
                     AnsiConsole.MarkupLine("[bold yellow]😵 Test: Player Flashed![/]");
                     break;
-                case '6':
+                case '4':
                     _testDataGenerator?.ToggleAutoSimulation();
                     AnsiConsole.MarkupLine($"[bold cyan]🔄 Test: Auto-simulation {(_testDataGenerator?.IsAutoSimulationEnabled ?? false ? "enabled" : "disabled")}[/]");
                     break;
-                case '7':
+                case '5':
                     _testDataGenerator?.SimulateFullGame();
                     AnsiConsole.MarkupLine("[bold magenta]🎮 Test: Full Game Simulation Started![/]");
                     break;
-                case '8':
+                case '6':
                     _testDataGenerator?.SimulateNextRound();
                     AnsiConsole.MarkupLine("[bold blue]⏭️ Test: Next Round![/]");
                     break;
-                case '9':
+                case '7':
                     _testDataGenerator?.ShowGameStatus();
                     break;
                 case '0':

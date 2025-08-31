@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragify - CS2 GSI Event Tester</title>
+    <link rel="stylesheet" href="css/test.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎯 Fragify CS2 GSI Event Tester</h1>
+            <p>Comprehensive testing of all CounterStrike2GSI library events and data</p>
+        </header>
+
+        <div class="status-panel">
+            <div class="status-item">
+                <label>Connection Status:</label>
+                <span id="connection-status" class="status-indicator">Disconnected</span>
+            </div>
+            <div class="status-item">
+                <label>Messages Received:</label>
+                <span id="message-count">0</span>
+            </div>
+            <div class="status-item">
+                <label>Last Update:</label>
+                <span id="last-update">Never</span>
+            </div>
+            <div class="status-item">
+                <label>Current Map:</label>
+                <span id="current-map">Unknown</span>
+            </div>
+        </div>
+
+        <div class="controls">
+            <button id="refresh-btn" onclick="refreshData()">🔄 Refresh</button>
+            <button id="clear-btn" onclick="clearData()">🗑️ Clear</button>
+            <button id="export-btn" onclick="exportData()">📤 Export JSON</button>
+        </div>
+
+        <div class="main-content">
+            <div class="event-summary">
+                <h2>📊 Event Summary</h2>
+                <div class="summary-grid">
+                    <div class="summary-item">
+                        <label>Raw Data Events:</label>
+                        <span id="bomb-events-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>JSON Events:</label>
+                        <span id="round-events-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Error Events:</label>
+                        <span id="player-events-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Events:</label>
+                        <span id="map-events-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Event Count:</label>
+                        <span id="grenade-events-count">0</span>
+                    </div>
+                    <div class="summary-item">
+                        <label>Total Count:</label>
+                        <span id="total-events-count">0</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="event-details">
+                <h2>🔍 Detailed Event Data</h2>
+                <div class="event-tabs">
+                    <button class="tab-btn active" onclick="showTab('raw')">Raw GSI Data</button>
+                    <button class="tab-btn" onclick="showTab('events')">Parsed Events</button>
+                    <button class="tab-btn" onclick="showTab('bomb')">Bomb Events</button>
+                    <button class="tab-btn" onclick="showTab('rounds')">Round Events</button>
+                    <button class="tab-btn" onclick="showTab('players')">Player Events</button>
+                    <button class="tab-btn" onclick="showTab('maps')">Map Events</button>
+                </div>
+
+                <div id="raw-tab" class="tab-content active">
+                    <h3>📡 Raw GSI Message</h3>
+                    <div class="data-info">
+                        <span>Size: <span id="message-size">0</span> bytes</span>
+                        <span>Timestamp: <span id="message-timestamp">Never</span></span>
+                    </div>
+                    <div id="raw-message-content" class="code-block">
+                        <em>Waiting for GSI data...</em>
+                    </div>
+                </div>
+
+                <div id="events-tab" class="tab-content">
+                    <h3>🎯 All Parsed Events</h3>
+                    <div id="parsed-events-content" class="code-block">
+                        <em>No events parsed yet...</em>
+                    </div>
+                </div>
+
+                <div id="bomb-tab" class="tab-content">
+                    <h3>💣 Bomb Events</h3>
+                    <div id="bomb-events-content" class="code-block">
+                        <em>No bomb events yet...</em>
+                    </div>
+                </div>
+
+                <div id="rounds-tab" class="tab-content">
+                    <h3>🎮 Round Events</h3>
+                    <div id="round-events-content" class="code-block">
+                        <em>No round events yet...</em>
+                    </div>
+                </div>
+
+                <div id="players-tab" class="tab-content">
+                    <h3>👤 Player Events</h3>
+                    <div id="player-events-content" class="code-block">
+                        <em>No player events yet...</em>
+                    </div>
+                </div>
+
+                <div id="maps-tab" class="tab-content">
+                    <h3>🗺️ Map Events</h3>
+                    <div id="map-events-content" class="code-block">
+                        <em>No map events yet...</em>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="debug-info">
+            <h3>🐛 Debug Information</h3>
+            <div id="debug-content" class="code-block">
+                <em>Debug information will appear here...</em>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/test.js"></script>
+</body>
+</html>

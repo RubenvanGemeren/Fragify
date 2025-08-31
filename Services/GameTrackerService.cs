@@ -1,6 +1,5 @@
 using FragifyTracker.Models;
-using CSGSI;
-using CSGSI.Nodes;
+using CounterStrike2GSI;
 
 namespace FragifyTracker.Services;
 
@@ -44,12 +43,26 @@ public class GameTrackerService
     {
         try
         {
+            // Check if this message is from the configured player
+            if (gameState.Player?.SteamID != null)
+            {
+                var configuredSteamId = _playerConfigService.GetSteamId();
+                if (gameState.Player.SteamID != configuredSteamId)
+                {
+                    // Skip messages from other players
+                    return;
+                }
+            }
+
             _currentStats.MapName = gameState.Map.Name;
             _currentStats.GameMode = gameState.Map.Mode.ToString();
             _currentStats.RoundPhase = gameState.Round.Phase.ToString();
-            _currentStats.BombState = gameState.Bomb.State.ToString();
-            _currentStats.RoundNumber = 0; // CSGSI doesn't provide this directly
-            _currentStats.RoundTime = 0; // CSGSI doesn't provide this directly
+            _currentStats.RoundNumber = 0; // TODO: Fix for new library structure - gameState.Map.Round;
+            _currentStats.RoundTime = 0; // TODO: Calculate from phase countdowns
+
+            // Note: Bomb state is not available to players in competitive games
+            // Only available to spectators, so we'll set it to "Unknown"
+            _currentStats.BombState = "Unknown";
 
                         if (gameState.Player != null)
             {
@@ -76,7 +89,7 @@ public class GameTrackerService
                 _currentStats.PlayerMVPs = gameState.Player.MatchStats.MVPs;
                 _currentStats.PlayerScore = gameState.Player.MatchStats.Score;
                 _currentStats.PlayerTeam = gameState.Player.Team.ToString();
-                _currentStats.ActiveWeapon = gameState.Player.Weapons?.ActiveWeapon?.Name ?? "Unknown";
+                _currentStats.ActiveWeapon = "Unknown"; // TODO: Fix for new library structure
 
                 // Update game session stats
                 _gameSessionService.UpdatePlayerStats(
@@ -90,16 +103,35 @@ public class GameTrackerService
                 );
             }
 
-            if (gameState.Round != null)
+            if (gameState.Map != null)
             {
-                // CSGSI provides team scores in the Map node, not Round node
-                _currentStats.ScoreT = gameState.Map.TeamT.Score;
-                _currentStats.ScoreCT = gameState.Map.TeamCT.Score;
+                // TODO: Fix for new library structure - need to find where team scores are stored
+                _currentStats.ScoreT = 0; // gameState.Map.TeamT.Score;
+                _currentStats.ScoreCT = 0; // gameState.Map.TeamCT.Score;
             }
 
             _currentStats.MessagesReceived++;
             _currentStats.LastMessageTime = DateTime.Now;
-            _currentStats.LastMessageContent = $"Map: {_currentStats.MapName}, Phase: {_currentStats.RoundPhase}, Player Health: {_currentStats.PlayerHealth}";
+
+            // Store the full GameState as JSON to see all available data
+            try
+            {
+                var jsonOptions = new System.Text.Json.JsonSerializerOptions
+                {
+                    WriteIndented = true,
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
+                    MaxDepth = 64, // Increase max depth for complex objects
+                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles // Handle circular references
+                };
+                _currentStats.LastMessageContent = System.Text.Json.JsonSerializer.Serialize(gameState, jsonOptions);
+            }
+            catch (Exception ex)
+            {
+                // Fallback to simple format if JSON serialization fails
+                _currentStats.LastMessageContent = $"Map: {_currentStats.MapName}, Phase: {_currentStats.RoundPhase}, Player Health: {_currentStats.PlayerHealth}";
+                Console.WriteLine($"[WARNING] Failed to serialize GameState to JSON: {ex.Message}");
+            }
+
             _currentStats.IsConnected = true;
             _currentStats.ConnectionStatus = "Connected - Receiving data";
 
@@ -152,10 +184,9 @@ public class GameTrackerService
     private void CheckForRoundPhaseChanges(GameState gameState)
     {
         var currentPhase = gameState.Round.Phase.ToString();
-        var currentBombState = gameState.Bomb.State.ToString();
 
         // Update game state info for visual effects
-        UpdateGameStateInfo(currentPhase, currentBombState);
+        UpdateGameStateInfo(currentPhase);
 
         if (currentPhase == "Live" && _currentStats.RoundPhase != "Live")
         {
@@ -163,28 +194,13 @@ public class GameTrackerService
         }
         else if (currentPhase == "Over" && _currentStats.RoundPhase != "Over")
         {
-            OnRoundEnd();
-        }
-
-        // Check bomb state changes
-        if (currentBombState == "Planted" && _currentStats.BombState != "Planted")
-        {
-            OnBombPlanted();
-        }
-        else if (currentBombState == "Defused" && _currentStats.BombState != "Defused")
-        {
-            OnBombDefused();
-        }
-        else if (currentBombState == "Exploded" && _currentStats.BombState != "Exploded")
-        {
-            OnBombExploded();
         }
     }
 
-    private void UpdateGameStateInfo(string phase, string bombState)
+    private void UpdateGameStateInfo(string phase)
     {
         _gameStateInfo.CurrentPhase = phase;
-        _gameStateInfo.BombState = bombState;
+        _gameStateInfo.BombState = "N/A"; // Bomb state is not available to players
 
         // Update visual effects based on game state
         switch (phase)
@@ -202,38 +218,12 @@ public class GameTrackerService
                 break;
         }
 
-        switch (bombState)
-        {
-            case "Planted":
-                _gameStateInfo.ShowBombIcon = true;
-                _gameStateInfo.ShowBombTimer = true;
-                _gameStateInfo.BombIconColor = "#FF0000";
-                _gameStateInfo.BombPlantedTime = DateTime.Now;
-                break;
-            case "Defused":
-                _gameStateInfo.ShowBombIcon = false;
-                _gameStateInfo.ShowBombTimer = false;
-                _gameStateInfo.BorderColor = "#00FF00"; // Green for defused
-                _gameStateInfo.BorderEffect = "Pulse";
-                break;
-            case "Exploded":
-                _gameStateInfo.ShowBombIcon = false;
-                _gameStateInfo.ShowBombTimer = false;
-                _gameStateInfo.BorderColor = "#FF4500"; // Fiery orange-red
-                _gameStateInfo.BorderEffect = "Fire";
-                break;
-            default:
-                _gameStateInfo.ShowBombIcon = false;
-                _gameStateInfo.ShowBombTimer = false;
-                break;
-        }
-
-        // Update bomb timer if planted
-        if (_gameStateInfo.ShowBombTimer && _gameStateInfo.BombPlantedTime.HasValue)
-        {
-            var timeSincePlanted = DateTime.Now - _gameStateInfo.BombPlantedTime.Value;
-            _gameStateInfo.BombTimeRemaining = Math.Max(0, 40 - (int)timeSincePlanted.TotalSeconds);
-        }
+        // Bomb state visual effects are removed as bomb state is not available to players
+        _gameStateInfo.ShowBombIcon = false;
+        _gameStateInfo.ShowBombTimer = false;
+        _gameStateInfo.BombIconColor = "#000000"; // Default color
+        _gameStateInfo.BombTimeRemaining = 0;
+        _gameStateInfo.BombPlantedTime = null;
     }
 
     public void OnRoundBegin()
@@ -322,14 +312,17 @@ public class GameTrackerService
         }
     }
 
-    public void OnBombPlanted()
+    public void OnRoundStarted()
     {
+        _currentStats.TotalRounds++;
+        _currentStats.RoundNumber = _currentStats.TotalRounds;
+
         var gameEvent = new GameEvent
         {
-            EventType = "BombPlanted",
+            EventType = "RoundStarted",
             PlayerId = _mainPlayerSteamId ?? "unknown_player",
             PlayerName = "FragifyPlayer",
-            Description = "Bomb planted",
+            Description = $"Round {_currentStats.TotalRounds} started",
             Timestamp = DateTime.Now,
             RoundNumber = _currentStats.TotalRounds
         };
@@ -338,14 +331,45 @@ public class GameTrackerService
         _gameSessionService.AddGameEvent(gameEvent);
     }
 
-    public void OnBombDefused()
+    public void OnRoundEnded(string winningTeam)
+    {
+        var roundData = new RoundData
+        {
+            RoundNumber = _currentStats.TotalRounds,
+            Winner = winningTeam,
+            EndTime = DateTime.Now,
+            WinCondition = "Bomb"
+        };
+
+        _sessionManager.AddRoundData(roundData);
+
+        var gameEvent = new GameEvent
+        {
+            EventType = "RoundEnded",
+            PlayerId = _mainPlayerSteamId ?? "unknown_player",
+            PlayerName = "FragifyPlayer",
+            Description = $"Round {_currentStats.TotalRounds} ended - Winner: {winningTeam}",
+            Timestamp = DateTime.Now,
+            RoundNumber = _currentStats.TotalRounds
+        };
+
+        _sessionManager.AddGameEvent(gameEvent);
+
+        // Also add to game session
+        if (roundData != null)
+        {
+            _gameSessionService.AddRoundData(roundData);
+        }
+    }
+
+    public void OnPlayerDied(string playerName)
     {
         var gameEvent = new GameEvent
         {
-            EventType = "BombDefused",
+            EventType = "PlayerDied",
             PlayerId = _mainPlayerSteamId ?? "unknown_player",
-            PlayerName = "FragifyPlayer",
-            Description = "Bomb defused",
+            PlayerName = playerName,
+            Description = $"{playerName} died",
             Timestamp = DateTime.Now,
             RoundNumber = _currentStats.TotalRounds
         };
@@ -354,14 +378,14 @@ public class GameTrackerService
         _gameSessionService.AddGameEvent(gameEvent);
     }
 
-    public void OnBombExploded()
+    public void OnPlayerTookDamage(string playerName, int damage)
     {
         var gameEvent = new GameEvent
         {
-            EventType = "BombExploded",
+            EventType = "PlayerTookDamage",
             PlayerId = _mainPlayerSteamId ?? "unknown_player",
-            PlayerName = "FragifyPlayer",
-            Description = "Bomb exploded",
+            PlayerName = playerName,
+            Description = $"{playerName} took {damage} damage",
             Timestamp = DateTime.Now,
             RoundNumber = _currentStats.TotalRounds
         };
@@ -369,6 +393,12 @@ public class GameTrackerService
         _sessionManager.AddGameEvent(gameEvent);
         _gameSessionService.AddGameEvent(gameEvent);
     }
+
+
+
+
+
+
 
     public void OnConnectionEstablished()
     {

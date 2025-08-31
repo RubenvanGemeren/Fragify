@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fragify - CS:GO Dashboard</title>
+    <link rel="stylesheet" href="css/dashboard.css">
+</head>
+<body>
+    <div class="header">
+        <h1 id="header-title">🎯 Fragify</h1>
+        <p id="header-subtitle">Counter-Strike: Global Offensive Web Dashboard</p>
+    </div>
+
+    <div class="dashboard">
+        <!-- Left Panel - Map Information -->
+        <div class="left-panel">
+            <div class="card">
+                <h2>🗺️ Map Info</h2>
+                <div class="map-selector">
+                    <h3>Interactive Map</h3>
+                    <select id="map-select" onchange="loadSelectedMap()">
+                        <option value="">Select a map manually...</option>
+                        <option value="de_dust2">de_dust2 - Dust II</option>
+                        <option value="de_mirage">de_mirage - Mirage</option>
+                        <option value="de_inferno">de_inferno - Inferno</option>
+                        <option value="de_cache">de_cache - Cache</option>
+                        <option value="de_overpass">de_overpass - Overpass</option>
+                        <option value="de_nuke">de_nuke - Nuke</option>
+                        <option value="de_ancient">de_ancient - Ancient</option>
+                        <option value="de_vertigo">de_vertigo - Vertigo</option>
+                        <option value="de_cobblestone">de_cobblestone - Cobblestone</option>
+                        <option value="de_train">de_train - Train</option>
+                        <option value="de_anubis">de_anubis - Anubis</option>
+                    </select>
+                    <div class="current-map-info">
+                        Current game map: <span id="current-game-map">Unknown</span>
+                    </div>
+                    <div class="test-buttons">
+                        <button class="test-btn test-manual" onclick="testManualTheme()">Test Manual Theme</button>
+                        <button class="test-btn test-dust2" onclick="testDust2Theme()">Test Dust2 Theme</button>
+                        <button class="test-btn test-mirage" onclick="testMirageTheme()">Test Mirage Theme</button>
+                        <button class="test-btn test-reset" onclick="resetTheme()">Reset Theme</button>
+                    </div>
+                </div>
+                <div class="interactive-map" id="map-display">
+                    <div class="map-placeholder">
+                        <p>Select a map to view</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Panel - All Other Information -->
+        <div class="right-panel">
+            <!-- Game Information Card -->
+            <div class="card">
+                <h2>🎮 Game Information</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Map:</span>
+                        <span class="stat-value" id="map-name">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Mode:</span>
+                        <span class="stat-value" id="game-mode">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Round:</span>
+                        <span class="stat-value" id="round-number">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Phase:</span>
+                        <span class="stat-value" id="round-phase">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="score">Loading...</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Bomb:</span>
+                        <span class="stat-value" id="bomb-state">Unknown</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Statistics Card -->
+            <div class="card">
+                <h2>👤 Player Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Kills:</span>
+                        <span class="stat-value" id="player-kills">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Deaths:</span>
+                        <span class="stat-value" id="player-deaths">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Assists:</span>
+                        <span class="stat-value" id="player-assists">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">MVPs:</span>
+                        <span class="stat-value" id="player-mvps">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Score:</span>
+                        <span class="stat-value" id="player-score">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Team:</span>
+                        <span class="stat-value" id="player-team">Unknown</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Player Status Card -->
+            <div class="card">
+                <h2>📊 Player Status</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Health:</span>
+                        <span class="stat-value" id="player-health">100</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Armor:</span>
+                        <span class="stat-value" id="player-armor">100</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Money:</span>
+                        <span class="stat-value" id="player-money">$800</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Weapon:</span>
+                        <span class="stat-value" id="active-weapon">Unknown</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Session Statistics Card -->
+            <div class="card">
+                <h2>📈 Session Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Duration:</span>
+                        <span class="stat-value" id="session-duration">00:00:00</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Total Rounds:</span>
+                        <span class="stat-value" id="total-rounds">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Wins:</span>
+                        <span class="stat-value" id="rounds-won">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Losses:</span>
+                        <span class="stat-value" id="rounds-lost">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Win Rate:</span>
+                        <span class="stat-value" id="win-rate">0%</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Debug Information Card -->
+            <div class="card">
+                <h2>🔍 Debug Information</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Status:</span>
+                        <span class="stat-value" id="connection-status">Disconnected</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Messages:</span>
+                        <span class="stat-value" id="messages-received">0</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Last Message:</span>
+                        <span class="stat-value" id="last-message-time">Never</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Last Update:</span>
+                        <span class="stat-value" id="last-update">Never</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="refresh-info">
+        Auto-refreshing every 2 seconds | Last update: <span id="last-refresh">Never</span>
+    </div>
+
+    <div class="navigation">
+        <a href="index.html" class="nav-link active">Dashboard</a>
+        <a href="test.html" class="nav-link">Raw Data</a>
+    </div>
+
+    <script src="js/dashboard.js"></script>
+</body>
+</html>
