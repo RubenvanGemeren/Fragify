@@ -43,6 +43,12 @@ public class GameTrackerService
     {
         try
         {
+            // Debug: Log all available GameState properties to find where scores are stored
+            Console.WriteLine($"🔍 GameState properties available:");
+            var gameStateType = gameState.GetType();
+            var gameStateProperties = gameStateType.GetProperties();
+            Console.WriteLine($"🔍 GameState property names: {string.Join(", ", gameStateProperties.Select(p => p.Name))}");
+
             // Check if this message is from the configured player
             if (gameState.Player?.SteamID != null)
             {
@@ -59,6 +65,17 @@ public class GameTrackerService
             _currentStats.RoundPhase = gameState.Round.Phase.ToString();
             _currentStats.RoundNumber = 0; // TODO: Fix for new library structure - gameState.Map.Round;
             _currentStats.RoundTime = 0; // TODO: Calculate from phase countdowns
+
+            // Debug: Log Round properties to find where scores are stored
+            if (gameState.Round != null)
+            {
+                Console.WriteLine($"🔍 Round properties available:");
+                Console.WriteLine($"   Round.Phase: {gameState.Round.Phase}");
+
+                var roundType = gameState.Round.GetType();
+                var roundProperties = roundType.GetProperties();
+                Console.WriteLine($"🔍 Round property names: {string.Join(", ", roundProperties.Select(p => p.Name))}");
+            }
 
 
 
@@ -103,31 +120,97 @@ public class GameTrackerService
 
             if (gameState.Map != null)
             {
-                // TODO: Fix for new library structure - need to find where team scores are stored
-                _currentStats.ScoreT = 0; // gameState.Map.TeamT.Score;
-                _currentStats.ScoreCT = 0; // gameState.Map.TeamCT.Score;
+                // Debug: Log all available properties to find where scores are stored
+                Console.WriteLine($"🔍 Map properties available:");
+                Console.WriteLine($"   Map.Name: {gameState.Map.Name}");
+                Console.WriteLine($"   Map.Mode: {gameState.Map.Mode}");
+
+                // Try to find score properties
+                var mapType = gameState.Map.GetType();
+                var mapProperties = mapType.GetProperties();
+                Console.WriteLine($"🔍 Map property names: {string.Join(", ", mapProperties.Select(p => p.Name))}");
+
+                // Try to extract team scores from different possible locations
+                try
+                {
+                    // Check if TeamT and TeamCT properties exist
+                    var teamTProperty = gameStateType.GetProperty("TeamT");
+                    var teamCTProperty = gameStateType.GetProperty("TeamCT");
+
+                    if (teamTProperty != null && teamCTProperty != null)
+                    {
+                        var teamT = teamTProperty.GetValue(gameState);
+                        var teamCT = teamCTProperty.GetValue(gameState);
+
+                        if (teamT != null && teamCT != null)
+                        {
+                            var teamTScoreProperty = teamT.GetType().GetProperty("Score");
+                            var teamCTScoreProperty = teamCT.GetType().GetProperty("Score");
+
+                            if (teamTScoreProperty != null && teamCTScoreProperty != null)
+                            {
+                                _currentStats.ScoreT = (int)teamTScoreProperty.GetValue(teamT);
+                                _currentStats.ScoreCT = (int)teamCTScoreProperty.GetValue(teamCT);
+                                Console.WriteLine($"✅ Team scores extracted: T={_currentStats.ScoreT}, CT={_currentStats.ScoreCT}");
+                            }
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"⚠️ Could not extract team scores: {ex.Message}");
+                    _currentStats.ScoreT = 0;
+                    _currentStats.ScoreCT = 0;
+                }
             }
 
             _currentStats.MessagesReceived++;
             _currentStats.LastMessageTime = DateTime.Now;
 
-            // Store the full GameState as JSON to see all available data
+            // Store only the essential GameState properties to avoid circular references
             try
             {
+                var essentialData = new
+                {
+                    Map = new
+                    {
+                        Name = gameState.Map?.Name,
+                        Mode = gameState.Map?.Mode.ToString()
+                    },
+                    Round = new
+                    {
+                        Phase = gameState.Round?.Phase.ToString()
+                    },
+                    Player = new
+                    {
+                        Name = gameState.Player?.Name,
+                        SteamID = gameState.Player?.SteamID,
+                        Team = gameState.Player?.Team.ToString(),
+                        Health = gameState.Player?.State?.Health,
+                        Armor = gameState.Player?.State?.Armor,
+                        Money = gameState.Player?.State?.Money,
+                        Kills = gameState.Player?.MatchStats?.Kills,
+                        Deaths = gameState.Player?.MatchStats?.Deaths,
+                        Assists = gameState.Player?.MatchStats?.Assists,
+                        MVPs = gameState.Player?.MatchStats?.MVPs,
+                        Score = gameState.Player?.MatchStats?.Score
+                    },
+                    Timestamp = DateTime.Now
+                };
+
                 var jsonOptions = new System.Text.Json.JsonSerializerOptions
                 {
                     WriteIndented = true,
-                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase,
-                    MaxDepth = 64, // Increase max depth for complex objects
-                    ReferenceHandler = System.Text.Json.Serialization.ReferenceHandler.IgnoreCycles // Handle circular references
+                    PropertyNamingPolicy = System.Text.Json.JsonNamingPolicy.CamelCase
                 };
-                _currentStats.LastMessageContent = System.Text.Json.JsonSerializer.Serialize(gameState, jsonOptions);
+
+                _currentStats.LastMessageContent = System.Text.Json.JsonSerializer.Serialize(essentialData, jsonOptions);
             }
             catch (Exception ex)
             {
                 // Fallback to simple format if JSON serialization fails
                 _currentStats.LastMessageContent = $"Map: {_currentStats.MapName}, Phase: {_currentStats.RoundPhase}, Player Health: {_currentStats.PlayerHealth}";
-                Console.WriteLine($"[WARNING] Failed to serialize GameState to JSON: {ex.Message}");
+                Console.WriteLine($"[WARNING] Failed to serialize essential GameState data: {ex.Message}");
             }
 
             _currentStats.IsConnected = true;

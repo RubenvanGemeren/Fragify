@@ -6,7 +6,7 @@ namespace FragifyTracker.Services;
 public class MapThemeService
 {
     private readonly Dictionary<string, MapInfo> _mapThemes;
-    private readonly string _mapsDataPath = "Data/maps.json";
+    private readonly string _mapsDataPath = "Data/comprehensive_maps.json";
 
     public MapThemeService()
     {
@@ -25,20 +25,46 @@ public class MapThemeService
                 Directory.CreateDirectory(dataDir!);
             }
 
-            // If maps.json doesn't exist, create default themes
+            // If comprehensive_maps.json doesn't exist, create default themes
             if (!File.Exists(_mapsDataPath))
             {
                 CreateDefaultMapThemes();
             }
 
             var jsonContent = File.ReadAllText(_mapsDataPath);
-            var maps = JsonSerializer.Deserialize<List<MapInfo>>(jsonContent);
+            var mapsData = JsonSerializer.Deserialize<Dictionary<string, ComprehensiveMapData>>(jsonContent);
 
-            if (maps != null)
+            if (mapsData != null)
             {
-                foreach (var map in maps)
+                foreach (var kvp in mapsData)
                 {
-                    _mapThemes[map.MapName.ToLower()] = map;
+                    var mapData = kvp.Value;
+                    var mapInfo = new MapInfo
+                    {
+                        MapName = kvp.Key,
+                        DisplayName = mapData.displayName,
+                        Theme = mapData.theme,
+                        Colors = new MapColorPalette
+                        {
+                            Primary = mapData.colors.primary,
+                            Secondary = mapData.colors.secondary,
+                            Accent = mapData.colors.accent,
+                            Background = mapData.colors.background,
+                            Surface = mapData.colors.surface,
+                            Text = mapData.colors.text,
+                            Border = mapData.colors.border
+                        },
+                        MinimapUrl = mapData.fallbackUrl,
+                        Description = mapData.description,
+                        CommonLocations = mapData.commonLocations.Select(loc => new MapLocation
+                        {
+                            Name = loc.name,
+                            Type = loc.type,
+                            Description = loc.description
+                        }).ToList()
+                    };
+
+                    _mapThemes[mapInfo.MapName.ToLower()] = mapInfo;
                 }
             }
         }
@@ -68,7 +94,7 @@ public class MapThemeService
                     Text = "#F5DEB3",         // Wheat
                     Border = "#D4AF37"        // Gold
                 },
-                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_dust2_radar.png",
+                MinimapUrl = "https://totalcsgo.com/maps/de_dust2.png",
                 Description = "Classic desert map with long sightlines and strategic positions",
                 CommonLocations = new List<MapLocation>
                 {
@@ -93,7 +119,7 @@ public class MapThemeService
                     Text = "#F5DEB3",         // Wheat
                     Border = "#8B4513"        // Saddle Brown
                 },
-                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_mirage_radar.png",
+                MinimapUrl = "https://totalcsgo.com/maps/de_mirage.png",
                 Description = "Middle Eastern themed map with complex angles and tight corridors",
                 CommonLocations = new List<MapLocation>
                 {
@@ -118,7 +144,7 @@ public class MapThemeService
                     Text = "#FFE4E1",         // Misty Rose
                     Border = "#FF4500"        // Orange Red
                 },
-                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_inferno_radar.png",
+                MinimapUrl = "https://totalcsgo.com/maps/de_inferno.png",
                 Description = "Italian village map with narrow streets and close combat",
                 CommonLocations = new List<MapLocation>
                 {
@@ -143,7 +169,7 @@ public class MapThemeService
                     Text = "#E0E0E0",         // Light Gray
                     Border = "#708090"        // Slate Gray
                 },
-                MinimapUrl = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_cache_radar.png",
+                MinimapUrl = "https://totalcsgo.com/maps/de_cache.png",
                 Description = "Industrial map with clean angles and strategic positions",
                 CommonLocations = new List<MapLocation>
                 {
@@ -208,3 +234,5 @@ public class MapThemeService
         }
     }
 }
+
+

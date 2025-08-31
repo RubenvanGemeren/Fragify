@@ -35,4 +35,10 @@ public class GameStateInfo
     // UI State
     public bool IsUpdating { get; set; } = false;
     public string LastUpdateTime { get; set; } = string.Empty;
+    public string CurrentPhase { get; set; } = string.Empty;
+    public string BorderColor { get; set; } = string.Empty;
+    public string BorderEffect { get; set; } = string.Empty;
+    public bool IsRoundWon { get; set; } = false;
+    public bool IsRoundLost { get; set; } = false;
+    public string RoundResult { get; set; } = string.Empty;
 }

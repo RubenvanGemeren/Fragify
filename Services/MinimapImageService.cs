@@ -1,11 +1,12 @@
 using System.Text.Json;
+using FragifyTracker.Models;
 
 namespace FragifyTracker.Services;
 
 public class MinimapImageService
 {
     private readonly Dictionary<string, List<string>> _minimapUrls;
-    private readonly string _minimapDataPath = "Data/minimap_urls.json";
+    private readonly string _minimapDataPath = "Data/comprehensive_maps.json";
 
     public MinimapImageService()
     {
@@ -24,20 +25,27 @@ public class MinimapImageService
                 Directory.CreateDirectory(dataDir!);
             }
 
-            // If minimap_urls.json doesn't exist, create default URLs
+            // If comprehensive_maps.json doesn't exist, create default URLs
             if (!File.Exists(_minimapDataPath))
             {
                 CreateDefaultMinimapUrls();
             }
 
             var jsonContent = File.ReadAllText(_minimapDataPath);
-            var urls = JsonSerializer.Deserialize<Dictionary<string, List<string>>>(jsonContent);
+            var mapsData = JsonSerializer.Deserialize<Dictionary<string, ComprehensiveMapData>>(jsonContent);
 
-            if (urls != null)
+            if (mapsData != null)
             {
-                foreach (var kvp in urls)
+                foreach (var kvp in mapsData)
                 {
-                    _minimapUrls[kvp.Key.ToLower()] = kvp.Value;
+                    var mapData = kvp.Value;
+                    var urls = new List<string>
+                    {
+                        mapData.imageUrl,
+                        mapData.fallbackUrl
+                    };
+
+                    _minimapUrls[kvp.Key.ToLower()] = urls;
                 }
             }
         }
@@ -54,44 +62,43 @@ public class MinimapImageService
         {
             ["de_dust2"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_dust2_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png",
-                "https://steamcdn-a.akamaihd.net/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_dust2.png",
+                "https://totalcsgo.com/maps/de_dust2.png"
             },
             ["de_mirage"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_mirage_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_mirage.png",
+                "https://totalcsgo.com/maps/de_mirage.png"
             },
             ["de_inferno"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_inferno_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_inferno.png",
+                "https://totalcsgo.com/maps/de_inferno.png"
             },
             ["de_cache"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_cache_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_cache.png",
+                "https://totalcsgo.com/maps/de_cache.png"
             },
             ["de_overpass"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_overpass_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_overpass.png",
+                "https://totalcsgo.com/maps/de_overpass.png"
             },
             ["de_nuke"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_nuke_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_nuke.png",
+                "https://totalcsgo.com/maps/de_nuke.png"
             },
             ["de_ancient"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_ancient_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_ancient.png",
+                "https://totalcsgo.com/maps/de_ancient.png"
             },
             ["de_vertigo"] = new List<string>
             {
-                "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/overviews/de_vertigo_radar.png",
-                "https://cdn.cloudflare.steamstatic.com/apps/730/icons/econ/default_generated/weapon_knife_t_karambit_gs_radar_1_light_large.2ed1a956da341829f8f71ff6d147c0ad7ddf4d55.png"
+                "https://totalcsgo.com/maps/de_vertigo.png",
+                "https://totalcsgo.com/maps/de_vertigo.png"
             }
         };
 
@@ -158,3 +165,5 @@ public class MinimapImageService
         }
     }
 }
+
+

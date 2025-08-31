@@ -6,8 +6,8 @@ public class WeaponImageService
     private readonly Dictionary<string, string> _agentImages;
 
     // Base URLs for weapon and agent images
-    private const string WEAPON_BASE_URL = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/weapon_icons/";
-    private const string AGENT_BASE_URL = "https://raw.githubusercontent.com/SteamDatabase/GameTracking-CSGO/master/game/csgo/resource/agents/";
+            private const string WEAPON_BASE_URL = "https://totalcsgo.com/weapons/";
+        private const string AGENT_BASE_URL = "https://totalcsgo.com/agents/";
 
     public WeaponImageService()
     {
