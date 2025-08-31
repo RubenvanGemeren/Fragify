@@ -64,7 +64,7 @@ public class GameTrackerService
             // Only available to spectators, so we'll set it to "Unknown"
             _currentStats.BombState = "Unknown";
 
-                        if (gameState.Player != null)
+            if (gameState.Player != null)
             {
                 // Track the main player's Steam ID for persistent identification
                 if (string.IsNullOrEmpty(_mainPlayerSteamId))

@@ -17,35 +17,15 @@
         <div class="left-panel">
             <div class="card">
                 <h2>🗺️ Map Info</h2>
-                <div class="map-selector">
-                    <h3>Interactive Map</h3>
-                    <select id="map-select" onchange="loadSelectedMap()">
-                        <option value="">Select a map manually...</option>
-                        <option value="de_dust2">de_dust2 - Dust II</option>
-                        <option value="de_mirage">de_mirage - Mirage</option>
-                        <option value="de_inferno">de_inferno - Inferno</option>
-                        <option value="de_cache">de_cache - Cache</option>
-                        <option value="de_overpass">de_overpass - Overpass</option>
-                        <option value="de_nuke">de_nuke - Nuke</option>
-                        <option value="de_ancient">de_ancient - Ancient</option>
-                        <option value="de_vertigo">de_vertigo - Vertigo</option>
-                        <option value="de_cobblestone">de_cobblestone - Cobblestone</option>
-                        <option value="de_train">de_train - Train</option>
-                        <option value="de_anubis">de_anubis - Anubis</option>
-                    </select>
+                <div class="map-info">
                     <div class="current-map-info">
-                        Current game map: <span id="current-game-map">Unknown</span>
-                    </div>
-                    <div class="test-buttons">
-                        <button class="test-btn test-manual" onclick="testManualTheme()">Test Manual Theme</button>
-                        <button class="test-btn test-dust2" onclick="testDust2Theme()">Test Dust2 Theme</button>
-                        <button class="test-btn test-mirage" onclick="testMirageTheme()">Test Mirage Theme</button>
-                        <button class="test-btn test-reset" onclick="resetTheme()">Reset Theme</button>
+                        <strong>Current Map:</strong> <span id="current-game-map">Unknown</span>
                     </div>
                 </div>
                 <div class="interactive-map" id="map-display">
                     <div class="map-placeholder">
-                        <p>Select a map to view</p>
+                        <p>Map display will appear here</p>
+                        <p class="map-placeholder-subtitle">Select a map from the game to view details</p>
                     </div>
                 </div>
             </div>

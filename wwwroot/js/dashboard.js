@@ -1,4 +1,4 @@
-let comprehensiveMapData = {};
+
 
 // SIMPLE THEME APPLICATION - Direct style changes
 function applyTheme(theme) {
@@ -102,82 +102,41 @@ async function updateTheme(mapName) {
     }
 }
 
-// Test themes
-function testManualTheme() {
-    const theme = {
-        backgroundGradient: 'linear-gradient(135deg, #1A0F0F 0%, #8B0000 50%, #FF4500 100%)',
-        primaryColor: '#FF4500',
-        textColor: '#FFE4E1',
-        cardBackground: 'rgba(26, 15, 15, 0.2)',
-        cardBorder: 'rgba(255, 69, 0, 0.3)'
-    };
-    applyTheme(theme);
-}
-
-function testDust2Theme() {
-    const theme = {
-        backgroundGradient: 'linear-gradient(135deg, #8B4513 0%, #D4AF37 50%, #F4A460 100%)',
-        primaryColor: '#d4af37',
-        textColor: '#F5DEB3',
-        cardBackground: 'rgba(139, 69, 19, 0.2)',
-        cardBorder: 'rgba(212, 175, 55, 0.3)'
-    };
-    applyTheme(theme);
-}
-
-function testMirageTheme() {
-    const theme = {
-        backgroundGradient: 'linear-gradient(135deg, #2F1B14 0%, #8B4513 50%, #DAA520 100%)',
-        primaryColor: '#8B4513',
-        textColor: '#F5DEB3',
-        cardBackground: 'rgba(47, 27, 20, 0.2)',
-        cardBorder: 'rgba(139, 69, 19, 0.3)'
-    };
-    applyTheme(theme);
-}
-
-function resetTheme() {
-    const theme = {
-        backgroundGradient: 'linear-gradient(135deg, #1e3c72 0%, #2a5298 100%)',
-        primaryColor: '#4ade80',
-        textColor: 'white',
-        cardBackground: 'rgba(255, 255, 255, 0.1)',
-        cardBorder: 'rgba(255, 255, 255, 0.2)'
-    };
-    applyTheme(theme);
-}
-
-function loadSelectedMap() {
-    const mapSelect = document.getElementById('map-select');
-    const selectedMap = mapSelect.value;
-    const mapDisplay = document.getElementById('map-display');
-
-    if (!selectedMap) {
-        mapDisplay.innerHTML = '<div class="map-placeholder"><p>Select a map to view</p></div>';
-        return;
-    }
-
-    const mapData = comprehensiveMapData[selectedMap];
-    if (mapData && mapData.imageUrl) {
-        mapDisplay.innerHTML = '<img src="' + mapData.imageUrl + '" alt="Map minimap" style="width: 100%; height: 100%; object-fit: contain;">';
-    } else {
-        mapDisplay.innerHTML = '<div class="map-placeholder"><p>Map not available: ' + selectedMap + '</p></div>';
-    }
-}
-
-async function updateMapSelector(gameMapName) {
-    const mapSelect = document.getElementById('map-select');
+// Update map info display
+async function updateMapInfo(gameMapName) {
     const currentGameMapSpan = document.getElementById('current-game-map');
+    const mapNameDisplay = document.getElementById('map-name-display');
+    const mapDisplay = document.getElementById('map-display');
 
     if (gameMapName && gameMapName !== 'Unknown') {
         currentGameMapSpan.textContent = gameMapName;
-        mapSelect.value = gameMapName;
-        loadSelectedMap();
+        mapNameDisplay.textContent = gameMapName;
+
+        // Update map display to show map info
+        mapDisplay.innerHTML = `
+            <div class="map-active">
+                <h3>🎯 ${gameMapName}</h3>
+                <p>Map is currently active</p>
+                <div class="map-status">
+                    <span class="status-indicator active"></span>
+                    <span>Connected to game</span>
+                </div>
+            </div>
+        `;
 
         // Automatically apply theme based on the new map
         await updateTheme(gameMapName);
     } else {
         currentGameMapSpan.textContent = 'Unknown';
+        mapNameDisplay.textContent = 'No map selected';
+
+        // Show placeholder when no map is active
+        mapDisplay.innerHTML = `
+            <div class="map-placeholder">
+                <p>Map display will appear here</p>
+                <p class="map-placeholder-subtitle">Start a CS2 game to see map information</p>
+            </div>
+        `;
     }
 }
 
@@ -202,8 +161,12 @@ async function updateDashboard(stats) {
         }
     }
 
-    // Update map selector
-    await updateMapSelector(stats.mapName);
+    // Update map info
+    await updateMapInfo(stats.mapName);
+
+    // Update map info details
+    document.getElementById('game-mode-display').textContent = stats.gameMode || 'Unknown';
+    document.getElementById('round-phase-display').textContent = stats.roundPhase || 'Unknown';
 
     // Update player statistics
     document.getElementById('player-kills').textContent = stats.playerKills || 0;
@@ -250,21 +213,8 @@ async function fetchStats() {
     }
 }
 
-async function loadComprehensiveMapData() {
-    try {
-        const response = await fetch('/api/maps');
-        if (response.ok) {
-            comprehensiveMapData = await response.json();
-            console.log('Loaded map data:', Object.keys(comprehensiveMapData).length, 'maps');
-        }
-    } catch (error) {
-        console.error('Error loading map data:', error);
-    }
-}
-
 // Initialize dashboard
 document.addEventListener('DOMContentLoaded', function() {
-    loadComprehensiveMapData();
     fetchStats();
     setInterval(fetchStats, 2000);
 });
